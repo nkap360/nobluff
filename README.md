@@ -1,12 +1,17 @@
-﻿# Procureur
+# Procureur
 
 **Make your coding agent prove its work.** Procureur is a skill pack that turns Claude Code, Codex or Cursor into the prosecutor of its own output: no placeholders, no "optionally", no "should work" — evidence before claims, decisions instead of options, a verdict you can act on.
 
 ```bash
-git clone https://github.com/Ronald-Nyami/procureur ~/.claude/skills/procureur
+# Claude Code
+/plugin marketplace add provenwork/skills
+/plugin install procureur@provenwork
+
+# Any agent that reads SKILL.md (Claude Code, Codex, Cursor, OpenClaw…)
+npx skills add provenwork/procureur
 ```
 
-One command. Five skills. No dependencies. Works with any agent that reads `SKILL.md` files (Claude Code, Codex CLI, Cursor, OpenClaw).
+Two lines in Claude Code, one command anywhere else. Five skills. No dependencies.
 
 ## Sixty seconds
 

@@ -1,0 +1,18 @@
+{
+  "name": "procureur",
+  "version": "0.1.0",
+  "description": "Make your coding agent prove its work.",
+  "author": {
+    "name": "Ronald Nyami",
+    "url": "https://github.com/provenwork"
+  },
+  "homepage": "https://github.com/provenwork/procureur",
+  "repository": "https://github.com/provenwork/procureur",
+  "license": "MIT",
+  "keywords": [
+    "agent-skills",
+    "claude-code",
+    "codex",
+    "cursor"
+  ]
+}
