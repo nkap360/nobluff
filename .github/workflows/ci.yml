@@ -26,3 +26,34 @@ jobs:
         run: |
           if python replay_check.py; then echo "expected the shipped handler to fail"; exit 1; fi
           python replay_check.py --fixed
+  detector:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: detector/go.mod
+      - name: Detector unit tests
+        working-directory: detector
+        run: go vet ./... && go test -count=1 -v ./...
+      - name: Shipped binaries match the source
+        working-directory: detector
+        run: |
+          go build -trimpath -ldflags="-s -w" -o /tmp/nobluff-ci .
+          echo '{"transcript_path":"missing.jsonl"}' | sh ../bin/nobluff
+          sh ../bin/nobluff version
+      - name: Hook blocks a bluff, end to end through the launcher
+        run: |
+          printf '%s\n' \
+            '{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"e1","name":"Edit","input":{"file_path":"a.py"}}]}}' \
+            '{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"e1","content":"ok"}]}}' \
+            '{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"All tests pass."}]}}' > t.jsonl
+          out=$(echo '{"transcript_path":"t.jsonl"}' | sh bin/nobluff)
+          echo "$out"
+          echo "$out" | grep -q '"decision":"block"'

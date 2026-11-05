@@ -9,6 +9,12 @@ EXPECTED = {"nobluff", "evidence-first", "no-placeholders", "fact-gate", "verdic
 
 
 def frontmatter(path: Path) -> dict:
+    """Read the YAML frontmatter, rejecting what a real YAML parser rejects.
+
+    An unquoted value containing ": " is not valid YAML; Claude Code then drops the skill from the
+    model-invocable list without any error. That bug shipped in 0.1.0 and 0.2.0 because this reader
+    used to split on the first colon and accept it.
+    """
     text = path.read_text(encoding="utf-8")
     m = re.match(r"^---\n(.*?)\n---\n", text.replace("\r\n", "\n"), re.S)
     if not m:
@@ -17,7 +23,11 @@ def frontmatter(path: Path) -> dict:
     for line in m.group(1).splitlines():
         if ":" in line and not line.startswith(" "):
             key, value = line.split(":", 1)
-            out[key.strip()] = value.strip().strip('"')
+            value = value.strip()
+            quoted = len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'"
+            if not quoted and (": " in value or value.endswith(":") or " #" in value):
+                raise ValueError(f"{path}: unquoted '{key}' value is invalid YAML; wrap it in double quotes")
+            out[key.strip()] = value[1:-1] if quoted else value
     return out
 
 
@@ -43,6 +53,19 @@ class SkillPack(unittest.TestCase):
         self.assertEqual(manifest["name"], "nobluff")
         self.assertRegex(manifest["version"], r"^\d+\.\d+\.\d+$")
         self.assertEqual(manifest["license"], "MIT")
+
+    def test_stop_hook_points_to_the_launcher(self):
+        hooks = json.loads((ROOT / "hooks" / "hooks.json").read_text(encoding="utf-8"))
+        command = hooks["hooks"]["Stop"][0]["hooks"][0]["command"]
+        self.assertIn("${CLAUDE_PLUGIN_ROOT}/bin/nobluff", command)
+        self.assertTrue((ROOT / "bin" / "nobluff").exists())
+
+    def test_a_binary_ships_for_every_supported_platform(self):
+        for name in ["linux-amd64", "linux-arm64", "darwin-amd64", "darwin-arm64", "windows-amd64.exe", "windows-arm64.exe"]:
+            with self.subTest(platform=name):
+                binary = ROOT / "bin" / f"nobluff-{name}"
+                self.assertTrue(binary.exists(), binary)
+                self.assertGreater(binary.stat().st_size, 500_000)
 
     def test_changelog_mentions_current_version(self):
         manifest = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))

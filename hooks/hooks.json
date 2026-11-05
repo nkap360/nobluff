@@ -1,0 +1,16 @@
+{
+  "description": "NoBluff detector: blocks the end of a turn when the final answer claims something the session transcript contradicts.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/nobluff\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

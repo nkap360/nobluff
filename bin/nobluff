@@ -1,0 +1,22 @@
+#!/bin/sh
+# Picks the NoBluff detector binary for this OS and CPU. If none fits, it does nothing:
+# a missing binary must never break the agent's session.
+dir=$(cd "$(dirname "$0")" && pwd)
+case "$(uname -s)" in
+  Linux*) os=linux ;;
+  Darwin*) os=darwin ;;
+  MINGW*|MSYS*|CYGWIN*|Windows_NT) os=windows ;;
+  *) exit 0 ;;
+esac
+case "$(uname -m)" in
+  x86_64|amd64) arch=amd64 ;;
+  arm64|aarch64) arch=arm64 ;;
+  *) exit 0 ;;
+esac
+ext=""
+[ "$os" = windows ] && ext=".exe"
+bin="$dir/nobluff-$os-$arch$ext"
+[ -f "$bin" ] || exit 0
+# git on Windows does not keep the executable bit; restore it if we can.
+[ -x "$bin" ] || chmod +x "$bin" 2>/dev/null || exit 0
+exec "$bin" "$@"

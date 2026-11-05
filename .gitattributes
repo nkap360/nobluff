@@ -1,0 +1,3 @@
+bin/nobluff text eol=lf
+bin/nobluff-* binary
+*.go text eol=lf

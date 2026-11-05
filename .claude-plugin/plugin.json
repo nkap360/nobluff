@@ -1,7 +1,7 @@
 {
   "name": "nobluff",
-  "version": "0.2.0",
-  "description": "Your coding agent stops saying \"done\" until it's proven.",
+  "version": "0.3.0",
+  "description": "Your coding agent stops saying \"done\" until it's proven: five skills plus a Stop hook that blocks claims the session contradicts.",
   "author": {
     "name": "Ronald Nyami",
     "url": "https://github.com/provenwork"
