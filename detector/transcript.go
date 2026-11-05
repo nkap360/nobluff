@@ -59,6 +59,60 @@ func LoadSession(path string) (*Session, error) {
 }
 
 func ParseSession(r io.Reader) (*Session, error) {
+	events, err := readEvents(r)
+	if err != nil {
+		return nil, err
+	}
+	return build(events), nil
+}
+
+// Turns splits a transcript at each new user prompt and returns one Session per turn, so a
+// claim in turn 3 is judged against what ran in turn 3. Hook feedback also starts a turn.
+func Turns(path string) ([]*Session, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	events, err := readEvents(f)
+	if err != nil {
+		return nil, err
+	}
+	var out []*Session
+	start := 0
+	for i, e := range events {
+		if i > start && isPrompt(e) {
+			out = append(out, build(events[start:i]))
+			start = i
+		}
+	}
+	if start < len(events) {
+		out = append(out, build(events[start:]))
+	}
+	return out, nil
+}
+
+func isPrompt(e event) bool {
+	if e.Type != "user" {
+		return false
+	}
+	var str string
+	if json.Unmarshal(e.Message.Content, &str) == nil {
+		return true
+	}
+	var blocks []block
+	if json.Unmarshal(e.Message.Content, &blocks) != nil {
+		return false
+	}
+	for _, b := range blocks {
+		if b.Type == "text" {
+			return true
+		}
+	}
+	return false
+}
+
+func readEvents(r io.Reader) ([]event, error) {
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -79,7 +133,7 @@ func ParseSession(r io.Reader) (*Session, error) {
 			}
 		}
 	}
-	return build(events), nil
+	return events, nil
 }
 
 func build(events []event) *Session {

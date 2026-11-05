@@ -182,6 +182,25 @@ func TestHookBlocksThenOnlyWarnsOnSecondStop(t *testing.T) {
 	}
 }
 
+// scan judges each turn on its own: a bluff in turn 1 is found even if turn 2 is honest,
+// and turn 2's honesty does not depend on turn 1's commands.
+func TestTurnsAreJudgedSeparately(t *testing.T) {
+	tr := (&tb{}).edit("a.py").say("All tests pass.")
+	b, _ := json.Marshal(map[string]any{"type": "user", "message": map[string]any{"role": "user", "content": "now update the docs"}})
+	tr.lines = append(tr.lines, string(b))
+	tr.edit("README.md").say("Updated the README.")
+	p := filepath.Join(t.TempDir(), "s.jsonl")
+	if err := os.WriteFile(p, []byte(strings.Join(tr.lines, "\n")), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	turns, err := Turns(p)
+	if err != nil || len(turns) != 2 {
+		t.Fatalf("want 2 turns, got %d (%v)", len(turns), err)
+	}
+	expect(t, Check(turns[0]), "tests-not-run")
+	expect(t, Check(turns[1]), "")
+}
+
 func TestHookNeverBreaksOnBadInput(t *testing.T) {
 	var out bytes.Buffer
 	if code := hook(strings.NewReader("not json"), &out, ""); code != 0 || out.Len() != 0 {

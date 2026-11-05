@@ -3,6 +3,8 @@
 //
 //	nobluff                     hook mode: reads the Stop hook JSON on stdin
 //	nobluff check <transcript>  prints findings as JSON (JSON Lines session file or JSON array)
+//	nobluff scan [-n 50]        audits your recent Claude Code sessions, turn by turn, locally
+//	nobluff last                audits the latest session of the current folder
 //	NOBLUFF_MODE=warn           report to the user instead of blocking
 //
 // No model, no network: the same transcript always gives the same verdict, in milliseconds.
@@ -28,6 +30,10 @@ func main() {
 		switch os.Args[1] {
 		case "check":
 			os.Exit(checkCmd(os.Args[2:]))
+		case "scan":
+			os.Exit(scanCmd(os.Args[2:], os.Stdout))
+		case "last":
+			os.Exit(lastCmd(os.Stdout))
 		case "version", "--version":
 			fmt.Println("nobluff", version)
 			return

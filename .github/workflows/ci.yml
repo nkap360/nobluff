@@ -57,3 +57,7 @@ jobs:
           out=$(echo '{"transcript_path":"t.jsonl"}' | sh bin/nobluff)
           echo "$out"
           echo "$out" | grep -q '"decision":"block"'
+      - name: npm package runs the detector
+        if: runner.os != 'Windows'
+        working-directory: npm
+        run: npm run prepack && npm test
