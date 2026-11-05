@@ -1,6 +1,14 @@
 # Procureur
 
-**Make your coding agent prove its work.** Procureur is a skill pack that turns Claude Code, Codex or Cursor into the prosecutor of its own output: no placeholders, no "optionally", no "should work" — evidence before claims, decisions instead of options, a verdict you can act on.
+[![ci](https://github.com/provenwork/procureur/actions/workflows/ci.yml/badge.svg)](https://github.com/provenwork/procureur/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/provenwork/procureur?sort=semver)](https://github.com/provenwork/procureur/releases)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Agent Skills](https://img.shields.io/badge/format-Agent%20Skills-6f42c1.svg)](https://github.com/provenwork/skills)
+[![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-d97757.svg)](#install)
+
+**Make your coding agent prove its work.** Procureur is a skill pack that turns Claude Code, Codex or Cursor into the prosecutor of its own output: no placeholders, no "optionally", no "should work". Evidence before claims, decisions instead of options, a verdict you can act on.
+
+## Install
 
 ```bash
 # Claude Code
@@ -13,19 +21,24 @@ npx skills add provenwork/procureur
 
 Two lines in Claude Code, one command anywhere else. Five skills. No dependencies.
 
-## Sixty seconds
+## Demo: the green test that charges twice
 
-Ask your agent for a database migration **without** Procureur:
+![The shipped test passes; replaying the webhook books 149.00 EUR twice](assets/demo.svg)
 
-> "Here's a migration that should work. You may want to add an index later. Let me know if you'd like me to write tests!"
+A payment webhook handler ships with a passing test. Payment providers retry webhooks, so the same event can arrive twice. Each delivery is booked, and one 149.00 EUR payment ends up as 298.00 EUR in the ledger. Reproduce it in 30 seconds with Python 3.10+ and nothing else, from [`examples/double-charge`](examples/double-charge) in a copy of this repository:
 
-The same request **with** Procureur:
+```bash
+cd examples/double-charge
+python -m unittest test_payments   # OK: the suite is green
+python replay_check.py             # FAIL: 2 ledger entries, 298.00 EUR
+python replay_check.py --fixed     # PASS: 1 ledger entry, 149.00 EUR
+```
 
-> "Migration written and executed against a scratch copy (`migrations/0007_add_index.sql`, 42 ms). Index added now, not later — the query in `api/orders.py:118` is the only caller and it filters on `customer_id`. Regression test added and passing (`tests/test_orders.py::test_index_used`, 3 cases). Not verified: production data volume; the estimate assumes < 10M rows."
+"Tests pass" was true and the bug was still there. `evidence-first` makes the agent test the business rule (one payment, one entry) against the real-world failure, instead of stopping at the existing suite. CI runs these three commands on every push, so the demo cannot silently rot.
 
-Same model. Different contract.
+## How it works
 
-## The five skills
+Each skill is a short `SKILL.md` your agent loads. Together they change what the agent is allowed to hand you:
 
 | Skill | What it forbids | What it demands |
 |---|---|---|
@@ -35,16 +48,31 @@ Same model. Different contract.
 | `verdict-format` | burying the answer under caveats | bottom line first, proof second, residual risk last |
 | `self-audit` | silent failures, swallowed errors | a closing list: verified / assumed / not checked |
 
-Each skill is a short `SKILL.md`; read them, edit them, delete the ones you disagree with.
+Read them, edit them, delete the ones you disagree with.
 
-## What Procureur does not do
+## Example: the contract in one answer
 
-- It does not make the model smarter. It changes what the model is allowed to hand you.
-- It costs tokens: evidence means running things. Expect 10–30 % longer turns on small tasks, and far fewer round trips on real ones.
-- It is opinionated. If you like being offered three options, this is not for you.
+An illustrative answer to "fix the double charge", in the shape Procureur asks for:
+
+> **Fixed.** `handle_payment_succeeded` now records the provider `event_id` in `receipts` and books the ledger entry in the same transaction (`fixed/payments.py:21`).
+> **Proof:** `python replay_check.py --fixed` gives 1 ledger entry, 149.00 EUR, after 2 deliveries (and after 5, in `tests/test_double_charge.py`).
+> **Not checked:** concurrent deliveries across processes. SQLite serialises writes here; on Postgres, the unique key on `event_id` is what makes this safe.
 
 ## Why
 
 Eight years shipping GenAI in a Swiss private bank taught me one thing about AI output: the expensive failures are never the loud ones. They are the fluent, confident, unverified ones. Procureur is the working style I impose on every agent I use, written down so you can impose it too.
 
-MIT.
+## Limitations
+
+- It does not make the model smarter. It changes what the model is allowed to hand you.
+- It costs tokens: evidence means running things. Expect longer turns on small tasks and fewer round trips on real ones.
+- It is opinionated. If you like being offered three options, this is not for you.
+- No controlled with/without comparison has been published yet. The demo shows the failure class Procureur targets, not a measured effect.
+
+## Contributing
+
+Bug reports and skill proposals are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md); agents working on this repo should read [AGENTS.md](AGENTS.md). Changes are listed in [CHANGELOG.md](CHANGELOG.md), and security reports go through [SECURITY.md](SECURITY.md).
+
+## License
+
+[MIT](LICENSE).

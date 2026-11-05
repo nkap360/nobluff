@@ -1,0 +1,28 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Skill pack and demo tests
+        run: python -m unittest discover -s tests -v
+      - name: The shipped test suite is green
+        working-directory: examples/double-charge
+        run: python -m unittest -v test_payments
+      - name: The replay exposes the double booking
+        working-directory: examples/double-charge
+        run: |
+          if python replay_check.py; then echo "expected the shipped handler to fail"; exit 1; fi
+          python replay_check.py --fixed

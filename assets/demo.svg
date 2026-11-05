@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="300" viewBox="0 0 860 300" role="img" aria-labelledby="t d">
+  <title id="t">Green test, double charge</title>
+  <desc id="d">Terminal output: the shipped unit test passes, the replay check books 149.00 EUR twice (298.00 EUR), the fixed handler books it once.</desc>
+  <rect width="860" height="300" rx="10" fill="#0d1117"/>
+  <circle cx="22" cy="20" r="6" fill="#ff5f56"/><circle cx="42" cy="20" r="6" fill="#ffbd2e"/><circle cx="62" cy="20" r="6" fill="#27c93f"/>
+  <text x="430" y="24" fill="#8b949e" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" text-anchor="middle">examples/double-charge</text>
+  <g font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="15">
+    <text x="22" y="64" fill="#8b949e">$ <tspan fill="#e6edf3">python -m unittest test_payments</tspan></text>
+    <text x="22" y="88" fill="#e6edf3">Ran 1 test in 0.001s</text>
+    <text x="22" y="112" fill="#3fb950" font-weight="bold">OK</text>
+    <text x="22" y="150" fill="#8b949e">$ <tspan fill="#e6edf3">python replay_check.py</tspan></text>
+    <text x="22" y="174" fill="#e6edf3">shipped handler: 1 payment of 149.00 EUR, delivered twice -&gt; 2 ledger entries, <tspan fill="#f85149" font-weight="bold">298.00 EUR</tspan></text>
+    <text x="22" y="198" fill="#f85149" font-weight="bold">FAIL: the customer was charged once, the ledger booked it twice.</text>
+    <text x="22" y="236" fill="#8b949e">$ <tspan fill="#e6edf3">python replay_check.py --fixed</tspan></text>
+    <text x="22" y="260" fill="#e6edf3">fixed handler: 1 payment of 149.00 EUR, delivered twice -&gt; 1 ledger entry, <tspan fill="#3fb950" font-weight="bold">149.00 EUR</tspan></text>
+    <text x="22" y="284" fill="#3fb950" font-weight="bold">PASS: one payment, one entry.</text>
+  </g>
+</svg>
