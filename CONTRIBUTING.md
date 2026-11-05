@@ -1,6 +1,6 @@
 # Contributing
 
-Procureur asks agents for evidence. Contributions follow the same rule.
+NoBluff asks agents for evidence. Contributions follow the same rule.
 
 ## Proposing a change to a skill
 

@@ -1,13 +1,13 @@
 {
-  "name": "procureur",
-  "version": "0.1.0",
-  "description": "Make your coding agent prove its work.",
+  "name": "nobluff",
+  "version": "0.2.0",
+  "description": "Your coding agent stops saying \"done\" until it's proven.",
   "author": {
     "name": "Ronald Nyami",
     "url": "https://github.com/provenwork"
   },
-  "homepage": "https://github.com/provenwork/procureur",
-  "repository": "https://github.com/provenwork/procureur",
+  "homepage": "https://github.com/provenwork/nobluff",
+  "repository": "https://github.com/provenwork/nobluff",
   "license": "MIT",
   "keywords": [
     "agent-skills",

@@ -1,22 +1,24 @@
-# Procureur
+# NoBluff
 
-[![ci](https://github.com/provenwork/procureur/actions/workflows/ci.yml/badge.svg)](https://github.com/provenwork/procureur/actions/workflows/ci.yml)
-[![release](https://img.shields.io/github/v/release/provenwork/procureur?sort=semver)](https://github.com/provenwork/procureur/releases)
+[![ci](https://github.com/provenwork/nobluff/actions/workflows/ci.yml/badge.svg)](https://github.com/provenwork/nobluff/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/provenwork/nobluff?sort=semver)](https://github.com/provenwork/nobluff/releases)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Agent Skills](https://img.shields.io/badge/format-Agent%20Skills-6f42c1.svg)](https://github.com/provenwork/skills)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-d97757.svg)](#install)
 
-**Make your coding agent prove its work.** Procureur is a skill pack that turns Claude Code, Codex or Cursor into the prosecutor of its own output: no placeholders, no "optionally", no "should work". Evidence before claims, decisions instead of options, a verdict you can act on.
+**Your coding agent stops saying "done" until it's proven.** NoBluff is a skill pack that turns Claude Code, Codex or Cursor into the prosecutor of its own output: no placeholders, no "optionally", no "should work". Evidence before claims, decisions instead of options, a verdict you can act on.
+
+*Formerly Procureur. Old links and the old repository URL redirect here.*
 
 ## Install
 
 ```bash
 # Claude Code
 /plugin marketplace add provenwork/skills
-/plugin install procureur@provenwork
+/plugin install nobluff@provenwork
 
 # Any agent that reads SKILL.md (Claude Code, Codex, Cursor, OpenClaw…)
-npx skills add provenwork/procureur
+npx skills add provenwork/nobluff
 ```
 
 Two lines in Claude Code, one command anywhere else. Five skills. No dependencies.
@@ -52,7 +54,7 @@ Read them, edit them, delete the ones you disagree with.
 
 ## Example: the contract in one answer
 
-An illustrative answer to "fix the double charge", in the shape Procureur asks for:
+An illustrative answer to "fix the double charge", in the shape NoBluff asks for:
 
 > **Fixed.** `handle_payment_succeeded` now records the provider `event_id` in `receipts` and books the ledger entry in the same transaction (`fixed/payments.py:21`).
 > **Proof:** `python replay_check.py --fixed` gives 1 ledger entry, 149.00 EUR, after 2 deliveries (and after 5, in `tests/test_double_charge.py`).
@@ -60,14 +62,14 @@ An illustrative answer to "fix the double charge", in the shape Procureur asks f
 
 ## Why
 
-Eight years shipping GenAI in a Swiss private bank taught me one thing about AI output: the expensive failures are never the loud ones. They are the fluent, confident, unverified ones. Procureur is the working style I impose on every agent I use, written down so you can impose it too.
+Eight years shipping GenAI in a Swiss private bank taught me one thing about AI output: the expensive failures are never the loud ones. They are the fluent, confident, unverified ones. NoBluff is the working style I impose on every agent I use, written down so you can impose it too.
 
 ## Limitations
 
 - It does not make the model smarter. It changes what the model is allowed to hand you.
 - It costs tokens: evidence means running things. Expect longer turns on small tasks and fewer round trips on real ones.
 - It is opinionated. If you like being offered three options, this is not for you.
-- No controlled with/without comparison has been published yet. The demo shows the failure class Procureur targets, not a measured effect.
+- No controlled with/without comparison has been published yet. The demo shows the failure class NoBluff targets, not a measured effect.
 
 ## Contributing
 

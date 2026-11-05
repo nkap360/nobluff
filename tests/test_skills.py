@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-EXPECTED = {"procureur", "evidence-first", "no-placeholders", "fact-gate", "verdict-format", "self-audit"}
+EXPECTED = {"nobluff", "evidence-first", "no-placeholders", "fact-gate", "verdict-format", "self-audit"}
 
 
 def frontmatter(path: Path) -> dict:
@@ -40,7 +40,7 @@ class SkillPack(unittest.TestCase):
 
     def test_plugin_manifest(self):
         manifest = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
-        self.assertEqual(manifest["name"], "procureur")
+        self.assertEqual(manifest["name"], "nobluff")
         self.assertRegex(manifest["version"], r"^\d+\.\d+\.\d+$")
         self.assertEqual(manifest["license"], "MIT")
 

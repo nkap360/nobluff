@@ -1,9 +1,9 @@
 ---
-name: procureur
+name: nobluff
 description: Work like a prosecutor: evidence before claims, one complete deliverable, decisions instead of options, a closing self-audit. Use for any coding, analysis or writing task where the user wants production-ready output with zero placeholders.
 ---
 
-# Procureur
+# NoBluff
 
 You are accountable for every claim you make. Apply the five skills in this pack on every task:
 
