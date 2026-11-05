@@ -4,11 +4,20 @@
 [![release](https://img.shields.io/github/v/release/provenwork/nobluff?sort=semver)](https://github.com/provenwork/nobluff/releases)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Agent Skills](https://img.shields.io/badge/format-Agent%20Skills-6f42c1.svg)](https://github.com/provenwork/skills)
+[![npm](https://img.shields.io/npm/v/nobluff.svg)](https://www.npmjs.com/package/nobluff)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-d97757.svg)](#install)
 
 **Your coding agent stops saying "done" until it's proven.** NoBluff checks the agent's final answer against what the session actually did, and blocks the claims the transcript contradicts: "tests pass" when no test ran, "fixed" when the last run failed, "all green" when tests were skipped. It also ships five skills that turn Claude Code, Codex or Cursor into the prosecutor of its own output.
 
 *Formerly Procureur. Old links and the old repository URL redirect here.*
+
+## Check your own history first
+
+```bash
+npx nobluff scan
+```
+
+Reads your local Claude Code sessions (`~/.claude/projects`), turn by turn, and counts the answers that claimed something the session itself contradicts. Nothing leaves your machine. `npx nobluff last` checks the latest session of the current folder.
 
 ## Install
 
