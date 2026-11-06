@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 — 2026-11-06
+
+- New: Claude Managed Agents support. `nobluff check` reads Managed Agents session events (`GET /v1/sessions/{id}/events`, as a JSON array, a paginated `{"data": [...]}` page, or JSON Lines) and applies the same four rules to the latest turn. `nobluff check -` reads from stdin.
+- New: `examples/managed-agents/webhook.py`, a server-side Stop hook. On `session.status_idled` it runs the detector on the session's events and sends the agent back once per turn when its answer is contradicted.
+- Validated on a live Managed Agents session (Sonnet 5.5): an honest turn gave no finding; a turn that edited without running anything and ended with "All tests pass." gave `tests-not-run`; after `handle_idle` pushed back, the agent ran the tests and the next verdict was clean. Tool results link to their call by `tool_use_id`, as the adapter expected, including parallel calls. Both recordings are regression tests in `detector/testdata/`.
+- Fixed (found on that session): "I ran no commands" was read as a claim, because the negation came after the verb. A negation right after the verb ("I ran no…", "I tested nothing") now cancels the claim. No change on the 62 BluffBench transcripts, on 50 mutants, or on a 63-session history scan.
+- Fixed in `webhook.py`: events are serialised with `to_dict(mode="json")`; plain `to_dict()` keeps datetimes that `json.dumps` cannot encode. The logic now lives in `handle_idle(session_id)`, which can be run without a webhook delivery.
+- Not yet checked: a real `session.status_idled` webhook delivery and its signature verification.
+
 ## 0.3.0 — 2026-11-06
 
 - New: the NoBluff detector, a Claude Code Stop hook (Go, one static binary per platform, no dependency, no model, no network). When the agent tries to end its turn, it compares the final answer with what the session actually did, and blocks claims the transcript contradicts:

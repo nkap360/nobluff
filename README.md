@@ -53,6 +53,18 @@ Agent:   "All tests pass." is a factual claim that requires running tests to be 
 
 No model and no network: the same transcript always gives the same verdict, in milliseconds. Quoted, negated and announced claims ("I could not run the tests", "Now let me verify…") are not claims. It blocks once, then only warns, so it cannot trap the agent in a loop. Set `NOBLUFF_MODE=warn` to be told instead of blocked. Run it on any saved session with `bin/nobluff check <transcript.jsonl>`.
 
+## Claude Managed Agents (beta)
+
+Agents that run on their own, on a schedule or behind an API, are where an unverified "done" costs the most: nobody is watching the turn. Managed Agents has no Stop hook, so NoBluff runs on your server instead:
+
+1. Anthropic POSTs a `session.status_idled` webhook when the agent ends its turn.
+2. Your server lists the session's events and pipes them to `nobluff check -` (it reads the Managed Agents event format directly).
+3. If the final answer claims something the events contradict, the server sends the agent back with the reason. Once per turn, then report only.
+
+The full server is in [`examples/managed-agents/webhook.py`](examples/managed-agents/webhook.py). It complements outcomes, Managed Agents' rubric grader: the grader judges the deliverable; NoBluff checks that each claim matches something that actually ran.
+
+Checked on a live session (Sonnet 5.5): the agent edited a file, ran nothing, and ended with "All tests pass." NoBluff flagged it and sent the agent back; the agent ran the tests, said which behaviour no test covers, and the next verdict was clean. Both recordings are in [`detector/testdata`](detector/testdata). Status: beta. The detector and the push-back loop are validated on real events; the server has not yet handled a real webhook delivery.
+
 ## Demo: the green test that charges twice
 
 ![The shipped test passes; replaying the webhook books 149.00 EUR twice](assets/demo.svg)

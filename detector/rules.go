@@ -35,6 +35,9 @@ var (
 // Announcing a check is not claiming its result: "Now verify the tests still pass".
 var intent = regexp.MustCompile(`(?i)(\bnow (verify|run|check|test)|\blet me\b|\bi'll\b|\bi will\b|\bnext,? i\b|\bto verify\b|\bgoing to\b|\bje vais\b|\bv[ée]rifions\b)`)
 
+// A negation right after the verb also cancels it: "I ran no commands", "I tested nothing".
+var negatedAfter = regexp.MustCompile(`(?i)^\s*(no|nothing|none|zero|aucune?|rien)(?:$|[^\p{L}\p{N}])`)
+
 // claims returns the sentences of the final answer that match re and are not negated, hedged or
 // merely announced. A negation only counts just before or inside the matched claim, so
 // "test still passes; total is 149, not 298" is still a claim.
@@ -53,7 +56,7 @@ func claims(text string, re *regexp.Regexp) []string {
 		if from < 0 {
 			from = 0
 		}
-		if !negation.MatchString(s[from:loc[1]]) {
+		if !negation.MatchString(s[from:loc[1]]) && !negatedAfter.MatchString(s[loc[1]:]) {
 			out = append(out, s)
 		}
 	}

@@ -59,7 +59,19 @@ func LoadSession(path string) (*Session, error) {
 }
 
 func ParseSession(r io.Reader) (*Session, error) {
-	events, err := readEvents(r)
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	if ma := managedEvents(data); ma != nil {
+		// Managed Agents: judge the latest turn, like the Stop hook judges the answer being given now.
+		turns := managedTurns(ma)
+		if len(turns) == 0 {
+			return &Session{}, nil
+		}
+		return turns[len(turns)-1], nil
+	}
+	events, err := readEvents(bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +86,14 @@ func Turns(path string) ([]*Session, error) {
 		return nil, err
 	}
 	defer f.Close()
-	events, err := readEvents(f)
+	data, err := io.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+	if ma := managedEvents(data); ma != nil {
+		return managedTurns(ma), nil
+	}
+	events, err := readEvents(bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}

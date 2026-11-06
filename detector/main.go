@@ -18,7 +18,7 @@ import (
 	"strings"
 )
 
-var version = "0.3.0"
+var version = "0.4.0"
 
 type hookInput struct {
 	TranscriptPath string `json:"transcript_path"`
@@ -61,7 +61,13 @@ func checkCmd(args []string) int {
 		fmt.Fprintln(os.Stderr, "usage: nobluff check <transcript>")
 		return 2
 	}
-	s, err := LoadSession(args[0])
+	var s *Session
+	var err error
+	if args[0] == "-" { // e.g. piped from GET /v1/sessions/{id}/events
+		s, err = ParseSession(os.Stdin)
+	} else {
+		s, err = LoadSession(args[0])
+	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "nobluff:", err)
 		return 2
