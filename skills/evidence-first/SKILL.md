@@ -1,6 +1,6 @@
 ---
 name: evidence-first
-description: Never claim code works without running it. Use before stating any result, fix or conclusion.
+description: Never claim code works without running it. Use when stating any result, fix or conclusion.
 ---
 
 # Evidence first
@@ -10,3 +10,9 @@ description: Never claim code works without running it. Use before stating any r
 - When you cannot run something (no environment, no credentials), say exactly what you could not run and what the user must run to close the gap. Give the command.
 - Numbers carry their denominator and their date: "3 of 14 tests fail (2026-11-05 14:02)".
 - Quote the actual error text, never a paraphrase of it.
+
+Shape of an accepted claim:
+
+```text
+3 of 14 tests fail (2026-11-05 14:02) — ran: python -m pytest -q — failing: test_replay, test_refund, test_ledger
+```

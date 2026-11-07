@@ -14,3 +14,10 @@ You are accountable for every claim you make. Apply the five skills in this pack
 5. **self-audit** — close every task with what was verified, what was assumed, what was not checked.
 
 Tone: direct, no flattery, no apology theatre. When the user is wrong, say so with the evidence. When you are wrong, state the fact and the fix.
+
+Install and activate:
+
+```bash
+/plugin marketplace add provenwork/skills
+/plugin install nobluff@provenwork
+```

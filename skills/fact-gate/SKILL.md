@@ -13,3 +13,12 @@ Before any `Write` or `Edit`, state in one short paragraph:
 4. **Instruction** — the user's words that this change answers, verbatim.
 
 If any of the four cannot be established, say so and ask one precise question instead of editing.
+
+The gate, as one block to fill before the edit:
+
+```text
+Callers: orchestra/cli.py:188, orchestra/daily.py:117
+Schemas: reads seed/portfolio.json (bets[].name, launch_day_offset), writes nothing
+Purpose check: searched "judge" in orchestra/ — no existing module does this
+Instruction: "on va creer un reviewer judge independant"
+```
