@@ -87,7 +87,7 @@ Each skill is a short `SKILL.md` your agent loads. Together they change what the
 | Skill | What it forbids | What it demands |
 |---|---|---|
 | `evidence-first` | "should work", "probably", untested claims | run it, cite `file:line`, show the output |
-| `no-placeholders` | TODO, "insert here", "optionally", three alternatives | one complete deliverable, decisions stated |
+| `no-placeholders` | to-do markers, "insert here", "optionally", three alternatives | one complete deliverable, decisions stated |
 | `fact-gate` | editing a file blind | callers, schemas and the user's instruction stated before the edit |
 | `verdict-format` | burying the answer under caveats | bottom line first, proof second, residual risk last |
 | `self-audit` | silent failures, swallowed errors | a closing list: verified / assumed / not checked |
