@@ -1,6 +1,6 @@
 {
   "name": "nobluff",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Review selected contradictions between Claude Code final claims and recognized transcript commands; five optional text skills.",
   "author": {
     "name": "Ronald Nyami",

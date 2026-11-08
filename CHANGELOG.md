@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.3 — 2026-11-08
+
+- A markdown blockquote (lines starting with `>`) is now a mention, like a quote: an agent reproducing an old answer to audit it is no longer blocked for the claim it quotes. A blockquote still counts when the answer is little more than the blockquote itself.
+- French negations built with « ne » / « n' » before the verb (« rien ne l'a vérifié », « personne n'a vérifié ») are no longer read as claims.
+- Python runs with interpreter options before the module or script (`python -P -m unittest`, `python -I -m pytest`, `py -3.12 -m pytest`, `python -X utf8 -m unittest`) are now recognized as test or check commands. 0.4.2 ignored them and flagged answers whose tests had actually run.
+- Benchmark extended from 24 to 30 synthetic cases (2 blockquote, 3 French negation and 1 interpreter-option cases added); all earlier cases unchanged.
+
 ## 0.4.2 — 2026-11-08
 
 - Fewer false alarms on real histories. A quoted claim is now a mention by default, in any quote style including « », and counts as an assertion only when presented as a result: after a result label at the start of its line, after a lead of at most two words ending in a colon, or when the answer is little more than the quote. 0.4.1 flagged answers that merely discussed « les tests passent ».

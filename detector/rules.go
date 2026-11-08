@@ -25,7 +25,7 @@ var (
 	claimAllTests = regexp.MustCompile(`(?i)(\ball (the )?(\w+ )?tests\b|test suite|\btous les tests\b|\bthe tests\b|\bentire suite\b)`)
 	// Go's \b is ASCII-only: after "é" it never matches, so the end boundary is spelled out.
 	claimVerified = regexp.MustCompile(`(?i)\b(verified|confirmed|i (ran|tested)|tested (it|and)|works( correctly| as expected)?|is working|now works|fixed|resolved|v[ée]rifi[ée]e?s?|confirm[ée]e?s?|fonctionne|corrig[ée]e?s?)(?:$|[^\p{L}\p{N}])`)
-	negation      = regexp.MustCompile(`(?i)(\b(?:not|never|unable|could not|cannot|without|no|pas|non|sans|impossible|ne peut)\s+(?:\w+\s+){0,2}$|\b(?:if|should|once|would|si)\b|n't\s+|\bunverified\b)`)
+	negation      = regexp.MustCompile(`(?i)(\b(?:not|never|unable|could not|cannot|without|no|pas|non|sans|impossible|ne peut)\s+(?:\w+\s+){0,2}$|\b(?:if|should|once|would|si)\b|n't\s+|\bunverified\b|\bne\s+(?:\S+\s+){0,2}$|\bn['’]\S*\s+(?:\S+\s+)?$)`)
 	mentionsSkip  = regexp.MustCompile(`(?i)(\b(?:\d+|one|some|the|a)\s+(?:\w+\s+)?tests?\s+(?:is |are |was |were )?skipped\b|\bskipped\s+(?:\d+\s+)?tests?\b|\btests?\s+(?:omis|ignor[ée]s?)\b)`)
 )
 
@@ -39,7 +39,7 @@ var negatedAfter = regexp.MustCompile(`(?i)^\s*(no|nothing|none|zero|aucune?|rie
 // merely announced. A negation only counts just before or inside the matched claim, so
 // "test still passes; total is 149, not 298" is still a claim.
 func claims(text string, re *regexp.Regexp) []string {
-	clean := stripMentions(codeFence.ReplaceAllString(text, " "))
+	clean := stripMentions(stripBlockquotes(codeFence.ReplaceAllString(text, " ")))
 	var out []string
 	for _, s := range sentence.FindAllString(clean, -1) {
 		s = strings.TrimSpace(s)
@@ -196,4 +196,16 @@ func stripMentions(text string) string {
 	}
 	b.WriteString(text[last:])
 	return b.String()
+}
+
+// A markdown blockquote ("> ...") reproduces someone else's words, such as an old answer being
+// audited. It is a mention, unless the answer is little more than the blockquote itself.
+var blockquoteLine = regexp.MustCompile(`(?m)^[ \t]*>.*$`)
+
+func stripBlockquotes(text string) string {
+	rest := blockquoteLine.ReplaceAllString(text, " ")
+	if rest == text || len(wordRe.FindAllString(rest, -1)) < 4 {
+		return text
+	}
+	return rest
 }
