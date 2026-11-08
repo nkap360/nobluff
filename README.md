@@ -7,13 +7,14 @@ npx nobluff scan
 ```
 
 ```text
-NoBluff scanned 50 Claude Code sessions (255 turns, 165 final answers).
-4 answers claimed something the transcript contradicts, in 3 sessions.
+NoBluff scanned 50 Claude Code sessions (265 turns, 165 final answers).
+12 answers had 12 findings to review, in 3 sessions.
 
-  tests-not-run      4
+  unverified-claim   9
+  tests-not-run      3
 ```
 
-That was the author's own history on 2026-11-08. One command, read-only: nothing leaves your machine. Your number will differ. No history yet? `npx nobluff demo` runs on a synthetic session.
+That was the author's own history on 2026-11-08, with 0.4.2. Each finding is a sentence to review, not a verdict: some are claims the agent never backed with a command, a few describe what a tool does. One command, read-only: nothing leaves your machine. Your number will differ. No history yet? `npx nobluff demo` runs on a synthetic session.
 
 ## Then make it impossible
 
@@ -43,7 +44,7 @@ The agent runs the check or takes the claim back. NoBluff blocks once, then only
 | `tests-skipped` | all tests pass | the last run reports skipped tests, without an explicit test-skipping disclosure |
 | `unverified-claim` | verified / works / fixed | code edited without a recognized check since |
 
-Executable names are checked at command positions; `echo pytest` does not count as pytest. Some direct shell mutations, such as `sed -i`, invalidate earlier runs. This is a bounded shell parser, not a shell interpreter: wrappers, aliases, scripts that edit files, dynamic commands, other languages and unusual wording can be missed. Any recognized check can still be irrelevant or fabricated. Explicit quotation discussion and announced future checks are exempted; quoted result assertions are checked. False positives remain possible.
+Executable names are checked at command positions; `echo pytest` does not count as pytest. Some direct shell mutations, such as `sed -i`, invalidate earlier runs. This is a bounded shell parser, not a shell interpreter: wrappers, aliases, scripts that edit files, dynamic commands, other languages and unusual wording can be missed. Any recognized check can still be irrelevant or fabricated. A quoted claim is treated as a mention unless it is presented as a result (after a label such as "Result:", after a very short lead ending in a colon, or as almost the whole answer); announced future checks and reports about someone else's work are exempted. Checks done by reading a web page are not recognized as verification. False positives remain possible.
 
 Exit codes for `check` and `demo`: **0** no finding, **1** findings to review, **2** input/operational error. Zero findings is not a certificate. `scan` reports distinct answers separately from rule findings and identifies parse coverage gaps. Its default is the 50 most recent top-level sessions; subagent folders are excluded. `last` falls back to the latest session of any project if this folder has none.
 
@@ -91,7 +92,7 @@ python scripts/build.py --check
 python scripts/verify_package.py
 ```
 
-The benchmark contains **12 explicitly constructed cases: eight known bypass regressions and four comparison cases** (definition dated 2026-11-08). It is a regression corpus chosen around known defects, not a random sample and not a real-world accuracy estimate. Results must be recalculated with the commands above. No claim about user adoption, long-session bluff rates, or skill efficacy follows from it. Earlier releases quoted internal studies whose full protocols and corpora were not public; their historical notes remain labelled as such, and those numbers are not evidence for this candidate.
+The benchmark contains **24 explicitly constructed cases: eight known bypass regressions, four comparison cases, seven quotation cases and five attribution cases** (definition dated 2026-11-08). It is a regression corpus chosen around known defects, not a random sample and not a real-world accuracy estimate. Results must be recalculated with the commands above. No claim about user adoption, long-session bluff rates, or skill efficacy follows from it. Earlier releases quoted internal studies whose full protocols and corpora were not public; their historical notes remain labelled as such, and those numbers are not evidence for this candidate.
 
 Builds use pinned **Go 1.27.3**, `CGO_ENABLED=0`, `-buildvcs=false -trimpath -ldflags="-s -w"`. `bin/build-manifest.json` records source and binary SHA256 values. `build.py --check` actually rebuilds all six binaries and compares bytes; `verify_package.py` enumerates and hashes the exact tarball, then executes its host binary on a synthetic fixture. Cross-compilation does not establish runtime compatibility on every target. There are no detector runtime dependencies; the npm launcher requires Node 16 or newer. Build tooling requires Python 3.10+ and the pinned Go compiler; npm packaging requires npm and Node.
 
@@ -117,7 +118,7 @@ The adapter persists delivery/challenge state. Failed processing returns 503 and
 
 ## Release workflow and alternatives
 
-`release.yml` stages a verified candidate by default. Its optional publishing job requires the explicit `publish` input, a tag matching the package version, the GitHub `release` environment and a configured npm trusted publisher for this repository/workflow/environment. The workflow uses Node 24 and npm 11.6.2; this build requirement is separate from the launcher runtime requirement. It publishes the tested tarball and checks its digest before npm. Version 0.4.1 was published to npm manually on 2026-11-08, from this repository, before the trusted publisher for this workflow was configured.
+`release.yml` stages a verified candidate by default. Its optional publishing job requires the explicit `publish` input, a tag matching the package version, the GitHub `release` environment and a configured npm trusted publisher for this repository/workflow/environment. The workflow uses Node 24 and npm 11.6.2; this build requirement is separate from the launcher runtime requirement. It publishes the tested tarball and checks its digest before npm. Versions 0.4.1 and 0.4.2 were published to npm manually on 2026-11-08, from this repository, before the trusted publisher for this workflow was configured.
 
 For a text-only verification discipline, compare [superpowers verification-before-completion](https://github.com/obra/superpowers/tree/main/skills/verification-before-completion). [proof-of-done](https://github.com/B0yko/proof-of-done) also checks transcript evidence and offers a history audit. [verify-before-stop](https://github.com/ianymu/claude-verify-before-stop) checks a verification log. These are alternative mechanisms; no comparative performance superiority is claimed here.
 

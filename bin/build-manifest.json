@@ -1,28 +1,28 @@
 {
   "binaries": {
     "nobluff-darwin-amd64": {
-      "bytes": 3066864,
-      "sha256": "41ef915eb5829eaf2e8c68f7a5ff33a74f3070e8fbf6cbd994b3a26f3720ef17"
+      "bytes": 3075056,
+      "sha256": "629f5e3bfd64037f4406acbc3d4f2d29b3adc801a094badf401059be10fedf94"
     },
     "nobluff-darwin-arm64": {
       "bytes": 2901042,
-      "sha256": "d00d96c1fa55ace8541e3be5abf4cd5c25a8c9ce1033c5e20a81af7b49c887f3"
+      "sha256": "86a56405920f93c667e407843474dd756af6548d6fd8ad44069aa51c572b38c4"
     },
     "nobluff-linux-amd64": {
-      "bytes": 3035296,
-      "sha256": "58889864645a2991e045971c2ad56fc0e024982c48a8e72f3da1eb722e259756"
+      "bytes": 3043488,
+      "sha256": "4b54caaf4250b00fe66bb88f38709ab63ceb9e0d02f420690ece182be321d55c"
     },
     "nobluff-linux-arm64": {
       "bytes": 2883744,
-      "sha256": "6f8a2bed692b8d3cbab6f64bb429da18692c1cdacad35f7927de38e8c21e062a"
+      "sha256": "43e4ba7e2c53eb0523d5da1691c94722e901c5e7db8dfa9feb39a8da6df18f79"
     },
     "nobluff-windows-amd64.exe": {
-      "bytes": 3216896,
-      "sha256": "19d7503386617b06028b2bd0755f996b485261605a8275ef12afc1d64ba23c51"
+      "bytes": 3224576,
+      "sha256": "7637aba86e18de434da0ecbf967f0949fe502faae366f66e1883c38ccbb83691"
     },
     "nobluff-windows-arm64.exe": {
-      "bytes": 2977280,
-      "sha256": "c5f4b3c0f64da4055c58ecfbb93113e6f5f9e32c78aba6ca86601a2a242c2867"
+      "bytes": 2983936,
+      "sha256": "d6fb91e88b06ad503a2cb023c392e3f5298ba8d4c887ac71b15145ca90d15f79"
     }
   },
   "flags": [
@@ -33,12 +33,12 @@
   "sources": {
     "detector/commands.go": "9a461081593011c9b70a5d91918daee57520fcc1380a60d68aaa86eafacbdbe9",
     "detector/go.mod": "777b87c0e2309d76ece1138f8e8968f64bee2632ae2421a9d72976143edaa224",
-    "detector/main.go": "6ad31c42273f26023761cd7435f4978e4e52ec2499710817eb4c85bae33f7729",
+    "detector/main.go": "ff483c6ce631901d45986ffd0cd2912cb810e4894e851c57c6d0f0b336d8a548",
     "detector/managed.go": "3e6fa37509801af241a57432a791b884ada686b3b12851f60b01abd1f1d57673",
-    "detector/rules.go": "a250d7f59fb07ff499976c16c436cba653cb3062a4b612a33907ef5cd68b5b65",
+    "detector/rules.go": "690f2b69b0e47d83ead631bdf3e61fad531b37955ff377f3875d82b2b7592edf",
     "detector/scan.go": "76d1ab26e2104097f8652e3b9ee2a53c34c6eef008de9b7de699be965739e896",
     "detector/transcript.go": "d823305fbe2107d8263bacfe438fe1e9ef81a6ccb33dbc15de5f661a204b3b87"
   },
   "toolchain": "go1.27.3",
-  "version": "0.4.1"
+  "version": "0.4.2"
 }

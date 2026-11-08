@@ -39,18 +39,21 @@ var negatedAfter = regexp.MustCompile(`(?i)^\s*(no|nothing|none|zero|aucune?|rie
 // merely announced. A negation only counts just before or inside the matched claim, so
 // "test still passes; total is 149, not 298" is still a claim.
 func claims(text string, re *regexp.Regexp) []string {
-	clean := codeFence.ReplaceAllString(text, " ")
-	// Quoting a sentence is mentioning it, not asserting it: `"All tests pass." is a claim I cannot make`.
-	// Preserve asserted quoted results, but ignore explicit discussion of a quoted claim.
-	if !regexp.MustCompile(`(?i)\b(result|verdict|r[ée]sultat)\s*:`).MatchString(clean) &&
-		regexp.MustCompile(`(?i)(is a (?:factual )?claim|cannot (?:say|make)|can't (?:say|make)|you (?:sent|said)|quoted|citation)`).MatchString(clean) {
-		clean = quoted.ReplaceAllString(clean, " ")
-	}
+	clean := stripMentions(codeFence.ReplaceAllString(text, " "))
 	var out []string
 	for _, s := range sentence.FindAllString(clean, -1) {
 		s = strings.TrimSpace(s)
 		loc := re.FindStringIndex(s)
 		if s == "" || loc == nil || intent.MatchString(s) {
+			continue
+		}
+		// A line that introduces a list ("**What was checked:**") announces content, it asserts nothing.
+		if strings.HasSuffix(strings.TrimRight(s, "*_ \t"), ":") {
+			continue
+		}
+		// A sentence about someone else's work ("The author fixed it", "Il a corrigé") is a report,
+		// not the agent's own claim, unless the agent is also a subject of it.
+		if win := s[max(0, loc[0]-60):loc[0]]; thirdPerson.MatchString(win) && !firstPerson.MatchString(win) {
 			continue
 		}
 		from := loc[0] - 30
@@ -151,4 +154,46 @@ func short(cmd string) string {
 		return cmd[:77] + "..."
 	}
 	return cmd
+}
+
+// A quoted claim is a mention by default: «les tests passent», "All tests pass." inside a
+// sentence that talks about it. It stays an assertion when it is presented as a result:
+// after a result label at the start of its line ("Result:", "Résultat :"), after a lead of
+// at most two words ending in a colon ("Done: \"All tests pass.\""), or when the answer is
+// little more than the quote itself.
+var resultLabel = regexp.MustCompile(`(?i)^(?:[-*>]\s*)?\**(?:result|results|verdict|output|r[ée]sultats?|sortie|statut|status)\**\s*:\s*$`)
+var wordRe = regexp.MustCompile(`[\p{L}\p{N}]+`)
+var thirdPerson = regexp.MustCompile(`(?i)(?:^|[^\p{L}])(?:il|elle|ils|elles|l['’]auteur|the author|he|she|they|the user|l['’]utilisateur|le client|the customer|celui-ci|celle-ci|someone|quelqu['’]un)(?:$|[^\p{L}])`)
+var firstPerson = regexp.MustCompile(`(?i)(?:^|[^\p{L}])(?:je|j['’]|i|i['’]ve|i['’]m|we|nous|on|my|mon|ma|mes)(?:$|[^\p{L}])`)
+var exampleLead = regexp.MustCompile(`(?i)^(?:par exemple|for example|for instance|e\.?g\.?|ex\.?|exemple|example|such as|like|comme|says?|dit|écrit|wrote|writes)\s*:$`)
+
+func stripMentions(text string) string {
+	ms := quoted.FindAllStringIndex(text, -1)
+	if len(ms) == 0 {
+		return text
+	}
+	rest := text
+	for i := len(ms) - 1; i >= 0; i-- {
+		rest = rest[:ms[i][0]] + " " + rest[ms[i][1]:]
+	}
+	if len(wordRe.FindAllString(rest, -1)) < 4 {
+		return text // the answer is essentially the quote: treat it as asserted
+	}
+	var b strings.Builder
+	last := 0
+	for _, m := range ms {
+		b.WriteString(text[last:m[0]])
+		start := strings.LastIndexAny(text[:m[0]], "\n.!?") + 1
+		lead := strings.TrimSpace(text[start:m[0]])
+		asserted := resultLabel.MatchString(lead) ||
+			(strings.HasSuffix(lead, ":") && len(wordRe.FindAllString(lead, -1)) <= 2 && !exampleLead.MatchString(lead))
+		if asserted {
+			b.WriteString(text[m[0]:m[1]])
+		} else {
+			b.WriteString(" ")
+		}
+		last = m[1]
+	}
+	b.WriteString(text[last:])
+	return b.String()
 }

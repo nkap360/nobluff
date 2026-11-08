@@ -10,7 +10,7 @@ Build source and binary digests are in bin/build-manifest.json. Rebuild with the
 
 | Version | Status |
 |---|---|
-| 0.4.x | Supported corrective line; local 0.4.1 candidate requires release before registry installation |
+| 0.4.x | Supported; install the latest 0.4 release |
 | <= 0.3.x | Historical; known limitations documented in CHANGELOG, no new fixes planned |
 
 Report vulnerabilities privately with GitHub security advisories: https://github.com/provenwork/nobluff/security/advisories/new . Do not attach private transcripts or credentials. Include a synthetic reproduction, affected version and expected/observed behavior. No response-time guarantee is claimed.

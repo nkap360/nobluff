@@ -1,6 +1,13 @@
 # Changelog
 
-## 0.4.1 — 2026-11-08 (local corrective candidate, not published here)
+## 0.4.2 — 2026-11-08
+
+- Fewer false alarms on real histories. A quoted claim is now a mention by default, in any quote style including « », and counts as an assertion only when presented as a result: after a result label at the start of its line, after a lead of at most two words ending in a colon, or when the answer is little more than the quote. 0.4.1 flagged answers that merely discussed « les tests passent ».
+- Sentences reporting someone else's work ("The author fixed it", "Il a corrigé") and lines introducing a list ("**What was checked:**") are no longer read as the agent's own claim.
+- Benchmark extended from 12 to 24 synthetic cases: 7 quotation and 5 attribution cases added; the 8 audit bypasses stay closed.
+- On the author's own history (50 sessions, 2026-11-08), findings fell from 28 in 25 answers with 0.4.1 to 12 in 12 answers.
+
+## 0.4.1 — 2026-11-08
 
 - Scan counts distinct answers separately from rule findings and reports parse coverage errors.
 - Runner recognition checks executable positions; eight publicly defined bypass cases have regression tests. Common shell mutations invalidate previous checks. Only completed recognized checks count; a read-only command such as pwd is not verification.
