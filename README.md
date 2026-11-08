@@ -1,23 +1,40 @@
 # NoBluff
 
-**Review selected contradictions between a coding agent's final claim and its visible commands.**
-
-NoBluff is a local, deterministic heuristic for Claude Code transcripts. It can flag a recognized claim such as “All tests pass” when no recognized test command followed the last recognized edit. It cannot prove that code is correct, that a command really tests the change, or that an agent is honest. Other agents can use the optional text skills; the executable Stop hook is for Claude Code.
-
-## Try a synthetic example first
-
-From this checkout, without reading any private history:
+**Find out how often your coding agent said "tests pass" when nothing ran, and stop it from happening again.**
 
 ```bash
-node npm/bin/nobluff.js demo
-# JSON finding: tests-not-run; exit status 1 is expected
-node npm/bin/nobluff.js check examples/synthetic-session.jsonl
-# Same finding; the fixture is deliberately synthetic
+npx nobluff scan
 ```
 
-The local corrective candidate is **0.4.1**. It has not been published by this preparation. After that version is released, the equivalent zero-history first run is `npx nobluff@0.4.1 demo`. npm may contact its registry to acquire the package; the detector itself makes no network requests.
+```text
+NoBluff scanned 50 Claude Code sessions (255 turns, 165 final answers).
+4 answers claimed something the transcript contradicts, in 3 sessions.
 
-## What is checked
+  tests-not-run      4
+```
+
+That was the author's own history on 2026-11-08. One command, read-only: nothing leaves your machine. Your number will differ. No history yet? `npx nobluff demo` runs on a synthetic session.
+
+## Then make it impossible
+
+Install the Stop hook in Claude Code:
+
+```text
+/plugin marketplace add provenwork/skills
+/plugin install nobluff@provenwork
+```
+
+When the agent ends its turn with a claim its own transcript contradicts, the turn is blocked:
+
+```text
+Agent:   [edits payments.py, runs nothing] ... All tests pass.
+NoBluff: You say "All tests pass.", but no test command ran after your last file change.
+         Run the tests and show the result, or remove the claim.
+```
+
+The agent runs the check or takes the claim back. NoBluff blocks once, then only warns, so it cannot trap the agent in a loop. One small Go binary: no model, no network, the same verdict every time.
+
+## How it works
 
 | Rule | Recognized claim | Transcript condition |
 |---|---|---|
@@ -30,9 +47,15 @@ Executable names are checked at command positions; `echo pytest` does not count 
 
 Exit codes for `check` and `demo`: **0** no finding, **1** findings to review, **2** input/operational error. Zero findings is not a certificate. `scan` reports distinct answers separately from rule findings and identifies parse coverage gaps. Its default is the 50 most recent top-level sessions; subagent folders are excluded. `last` falls back to the latest session of any project if this folder has none.
 
+Before launch, a competing model audited NoBluff adversarially. The eight bypasses it found, such as `echo pytest` counting as a test run, are fixed and now part of the public regression benchmark (see Public, reproducible checks).
+
+## Limits
+
+NoBluff is a local, deterministic heuristic for Claude Code transcripts. It can flag a recognized claim such as “All tests pass” when no recognized test command followed the last recognized edit. It cannot prove that code is correct, that a command really tests the change, or that an agent is honest. Other agents can use the optional text skills; the executable Stop hook is for Claude Code. Zero findings is not a certificate, and false positives remain possible.
+
 ## Install, update, disable, remove
 
-Claude Code marketplace installation, once the candidate is published:
+Claude Code marketplace installation:
 
 ```text
 /plugin marketplace add provenwork/skills
@@ -43,13 +66,13 @@ The plugin invokes the platform binary through its Stop hook. It blocks once, th
 
 Update through Claude Code's plugin manager and verify the selected version against its manifest. Disable or uninstall `nobluff` through the same plugin manager; verify the NoBluff Stop hook is absent before trusting that it is disabled. A manually copied hook must be removed from the settings file where it was added.
 
-For one-shot CLI use after publication, `npx nobluff@0.4.1 demo` does not create a global installation. npm may retain a cache; do not delete unrelated caches as an uninstall step. If installed globally, remove only this package with `npm uninstall -g nobluff`. For skills-only installs, use the skill installer's removal command or remove only the installed NoBluff skill directories; these text skills do not install a detector hook in other agents.
+For one-shot CLI use, `npx nobluff demo` does not create a global installation. npm may retain a cache; do not delete unrelated caches as an uninstall step. If installed globally, remove only this package with `npm uninstall -g nobluff`. For skills-only installs, use the skill installer's removal command or remove only the installed NoBluff skill directories; these text skills do not install a detector hook in other agents.
 
-Optional history review is an explicit next step:
+History review:
 
 ```bash
-node npm/bin/nobluff.js scan
-node npm/bin/nobluff.js last
+npx nobluff scan   # the 50 most recent sessions
+npx nobluff last   # the latest session of this folder
 ```
 
 These commands read local transcripts. No transcript is sent by the detector. Review output can quote final answers: keep it private when it contains private material. `NOBLUFF_DEBUG`, if configured, writes local diagnostic metadata to the named file.
@@ -94,7 +117,7 @@ The adapter persists delivery/challenge state. Failed processing returns 503 and
 
 ## Release workflow and alternatives
 
-`release.yml` stages a verified candidate by default. Its optional publishing job requires the explicit `publish` input, a tag matching the package version, the GitHub `release` environment and a configured npm trusted publisher for this repository/workflow/environment. The workflow uses Node 24 and npm 11.6.2; this build requirement is separate from the launcher runtime requirement. It publishes the tested tarball and checks its digest before npm. No remote run or registry publication has occurred during this local preparation.
+`release.yml` stages a verified candidate by default. Its optional publishing job requires the explicit `publish` input, a tag matching the package version, the GitHub `release` environment and a configured npm trusted publisher for this repository/workflow/environment. The workflow uses Node 24 and npm 11.6.2; this build requirement is separate from the launcher runtime requirement. It publishes the tested tarball and checks its digest before npm. Version 0.4.1 was published to npm manually on 2026-11-08, from this repository, before the trusted publisher for this workflow was configured.
 
 For a text-only verification discipline, compare [superpowers verification-before-completion](https://github.com/obra/superpowers/tree/main/skills/verification-before-completion). [proof-of-done](https://github.com/B0yko/proof-of-done) also checks transcript evidence and offers a history audit. [verify-before-stop](https://github.com/ianymu/claude-verify-before-stop) checks a verification log. These are alternative mechanisms; no comparative performance superiority is claimed here.
 
