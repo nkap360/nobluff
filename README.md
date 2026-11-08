@@ -92,6 +92,12 @@ This demonstrates a test-coverage gap, not a measured effect of installing text 
 
 The adapter persists delivery/challenge state. Failed processing returns 503 and permits retry; a completed duplicate returns 204. An untrusted `[NoBluff]` prefix alone cannot suppress the challenge. Detector failure is an error, never a clean verdict. An ambiguous outbound send is not resent automatically: inspect the session events and reconcile its stored challenge before retrying. Run one server process; keep its database private and backed up. Offline SDK/Flask doubles cover control flow only. A real signed webhook, service deployment and end-to-end Managed Agents delivery are **not verified** by this candidate.
 
+## Release workflow and alternatives
+
+`release.yml` stages a verified candidate by default. Its optional publishing job requires the explicit `publish` input, a tag matching the package version, the GitHub `release` environment and a configured npm trusted publisher for this repository/workflow/environment. The workflow uses Node 24 and npm 11.6.2; this build requirement is separate from the launcher runtime requirement. It publishes the tested tarball and checks its digest before npm. No remote run or registry publication has occurred during this local preparation.
+
+For a text-only verification discipline, compare [superpowers verification-before-completion](https://github.com/obra/superpowers/tree/main/skills/verification-before-completion). [proof-of-done](https://github.com/B0yko/proof-of-done) also checks transcript evidence and offers a history audit. [verify-before-stop](https://github.com/ianymu/claude-verify-before-stop) checks a verification log. These are alternative mechanisms; no comparative performance superiority is claimed here.
+
 ## Skills and contribution
 
 The five short instruction files are in `skills/`: evidence-first, fact-gate, no-placeholders, verdict-format and self-audit, plus the umbrella NoBluff skill. Their wording is an instruction contract; it does not enforce truth by itself. Read and edit them before use.

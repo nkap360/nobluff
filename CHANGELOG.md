@@ -8,7 +8,7 @@
 - Parser failures are explicit errors; availability-oriented Stop-hook failures warn and allow stopping rather than reporting a clean verdict.
 - Experimental webhook persists delivery/challenge state, permits processing retries, rejects a forged plain prefix as an anti-loop signal and treats detector failure as an error. Ambiguous sends require inspection; no live webhook validation claimed.
 - Public synthetic benchmark v1 and zero-history demo; old internal accuracy figures removed from current marketing copy. No new private recordings distributed.
-- Go1.27.3 pinned; all six binaries have source/binary digests and byte-for-byte rebuild checks. Exact npm tarball path/digest/version checks and host synthetic smoke. Candidate workflow stages artifacts and does not publish.
+- Go1.27.3 pinned; all six binaries have source/binary digests and byte-for-byte rebuild checks. Exact npm tarball path/digest/version checks and host synthetic smoke. The release workflow stages by default; registry/GitHub publication requires an explicit publish input, matching version tag and configured protected OIDC environment.
 - Current support policy, installation/removal instructions and limitations documented.
 
 ### Historical-study qualification
