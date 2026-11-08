@@ -1,3 +1,10 @@
 __pycache__/
 *.pyc
 *.sqlite
+.build/
+.build-cache/
+.go-path/
+*.tgz
+
+.artifacts/
+node_modules/

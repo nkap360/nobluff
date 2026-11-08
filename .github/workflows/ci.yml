@@ -6,58 +6,49 @@ on:
 permissions:
   contents: read
 jobs:
-  test:
+  python:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ["3.10", "3.13"]
+        python: ['3.10', '3.13']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - name: Skill pack and demo tests
-        run: python -m unittest discover -s tests -v
-      - name: The shipped test suite is green
-        working-directory: examples/double-charge
-        run: python -m unittest -v test_payments
-      - name: The replay exposes the double booking
+      - run: python -m unittest discover -s tests -v
+      - name: Payment replay expected failure and fixed comparison
         working-directory: examples/double-charge
         run: |
-          if python replay_check.py; then echo "expected the shipped handler to fail"; exit 1; fi
+          python -m unittest -v test_payments
+          set +e
+          python replay_check.py
+          code=$?
+          set -e
+          test "$code" -eq 1
           python replay_check.py --fixed
-  detector:
+  detector-and-package:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-    defaults:
-      run:
-        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: detector/go.mod
-      - name: Detector unit tests
-        working-directory: detector
-        run: go vet ./... && go test -count=1 -v ./...
-      - name: Shipped binaries match the source
+          go-version: '1.27.3'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Detector vet and tests
         working-directory: detector
         run: |
-          go build -trimpath -ldflags="-s -w" -o /tmp/nobluff-ci .
-          echo '{"transcript_path":"missing.jsonl"}' | sh ../bin/nobluff
-          sh ../bin/nobluff version
-      - name: Hook blocks a bluff, end to end through the launcher
-        run: |
-          printf '%s\n' \
-            '{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"e1","name":"Edit","input":{"file_path":"a.py"}}]}}' \
-            '{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"e1","content":"ok"}]}}' \
-            '{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"All tests pass."}]}}' > t.jsonl
-          out=$(echo '{"transcript_path":"t.jsonl"}' | sh bin/nobluff)
-          echo "$out"
-          echo "$out" | grep -q '"decision":"block"'
-      - name: npm package runs the detector
-        if: runner.os != 'Windows'
-        working-directory: npm
-        run: npm run prepack && npm test
+          go vet ./...
+          go test -count=1 -v ./...
+      - name: Compare all six binaries byte for byte with pinned source build
+        run: python scripts/build.py --check
+      - name: Verify the exact npm tarball and run its synthetic host smoke
+        run: python scripts/verify_package.py

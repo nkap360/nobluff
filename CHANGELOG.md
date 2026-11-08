@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.1 — 2026-11-08 (local corrective candidate, not published here)
+
+- Scan counts distinct answers separately from rule findings and reports parse coverage errors.
+- Runner recognition checks executable positions; eight publicly defined bypass cases have regression tests. Common shell mutations invalidate previous checks. Only completed recognized checks count; a read-only command such as pwd is not verification.
+- Positive claims survive unrelated negations, the phrase let me be clear, and asserted quoted results. Explicit quotation discussion and genuine future-check announcements remain exempt. These remain bounded heuristics, not semantic proof.
+- Parser failures are explicit errors; availability-oriented Stop-hook failures warn and allow stopping rather than reporting a clean verdict.
+- Experimental webhook persists delivery/challenge state, permits processing retries, rejects a forged plain prefix as an anti-loop signal and treats detector failure as an error. Ambiguous sends require inspection; no live webhook validation claimed.
+- Public synthetic benchmark v1 and zero-history demo; old internal accuracy figures removed from current marketing copy. No new private recordings distributed.
+- Go1.27.3 pinned; all six binaries have source/binary digests and byte-for-byte rebuild checks. Exact npm tarball path/digest/version checks and host synthetic smoke. Candidate workflow stages artifacts and does not publish.
+- Current support policy, installation/removal instructions and limitations documented.
+
+### Historical-study qualification
+
+The 0.3.0/0.4.0 notes below preserve statements made at those dates. Their quoted internal study counts, mutation runs and private history scans are not independently reproducible from the released corpus. They are not validation of 0.4.1 or a public accuracy estimate. The published Managed Agents recordings demonstrate one session only; the full claimed study corpus was not released. The historical npm0.3.0 binaries correspond to a later public commit than the v0.3.0 tag (28714177514f85517fb4b5336da6bad7cb2af625 versus d5e65fa1c44b7f2d00462f3bd1e806db99c517a6); old packages/tags are not rewritten by this correction.
 ## 0.4.0 — 2026-11-06
 
 - New: Claude Managed Agents support. `nobluff check` reads Managed Agents session events (`GET /v1/sessions/{id}/events`, as a JSON array, a paginated `{"data": [...]}` page, or JSON Lines) and applies the same four rules to the latest turn. `nobluff check -` reads from stdin.

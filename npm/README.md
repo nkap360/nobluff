@@ -1,43 +1,16 @@
 # nobluff
 
-**Did your coding agent say "tests pass" without running them?** Find out in one command:
+Review selected contradictions between Claude Code final claims and visible commands. This deterministic local heuristic cannot prove code correctness or agent honesty.
+
+Local corrective candidate: **0.4.1**, not published by this preparation. After release:
 
 ```bash
-npx nobluff scan
+npx nobluff@0.4.1 demo
+# synthetic example; expected exit 1, tests-not-run
 ```
 
-```text
-NoBluff scanned 50 Claude Code sessions (412 turns, 230 final answers).
-3 answers claimed something the transcript contradicts, in 2 sessions.
+The package includes a synthetic fixture under examples/ and source/binary SHA256 metadata in build-manifest.json. Optional scan/last read private local sessions; they do not transmit them. npm may contact the registry to obtain this package. Detector exit codes:0 no finding,1 findings,2 operational error. Scan distinguishes answers from rule findings and reports parsing gaps.
 
-  tests-not-run      2
-  tests-failed       1
-```
+No global install is needed for npx; npm may retain a cache. If globally installed, remove with npm uninstall -g nobluff. The package does not install a plugin hook automatically. Claude Code plugin removal and limitations: https://github.com/provenwork/nobluff#install-update-disable-remove
 
-It reads your local Claude Code transcripts (`~/.claude/projects`), turn by turn, and flags answers that claim something the session itself contradicts:
-
-| Rule | The answer says… | …but the transcript shows |
-|---|---|---|
-| `tests-not-run` | tests pass | no test command after the last file change |
-| `tests-failed` | tests pass / fixed / works | the last test run failed |
-| `tests-skipped` | all tests pass | tests were skipped and the answer never says so |
-| `unverified-claim` | verified / works / fixed | code was edited and nothing ran since |
-
-Local only: no model, no network, nothing leaves your machine.
-
-```bash
-npx nobluff last                 # latest session of the current folder
-npx nobluff scan -n 200          # more history
-npx nobluff check session.jsonl  # one transcript, JSON output
-```
-
-## Stop the bluff before it reaches you
-
-The same detector runs as a Claude Code Stop hook: when the agent tries to finish on a claim its own session contradicts, it is sent back to prove it or retract it.
-
-```text
-/plugin marketplace add provenwork/skills
-/plugin install nobluff@provenwork
-```
-
-Source, rules, tests and limitations: https://github.com/provenwork/nobluff
+Known limits include dynamic shells, custom runners, unusual claim wording, irrelevant or fabricated checks and false positives. Full source, synthetic regression protocol, build verification, plugin setup and optional experimental webhook adapter: https://github.com/provenwork/nobluff

@@ -26,9 +26,12 @@ def load(fixed: bool):
 
 def replay(module, deliveries: int = 2) -> tuple[int, int]:
     db = module.connect()
-    for _ in range(deliveries):
-        module.handle_payment_succeeded(db, "evt_042", 14900)
-    return module.entries(db), module.balance_cents(db)
+    try:
+        for _ in range(deliveries):
+            module.handle_payment_succeeded(db, "evt_042", 14900)
+        return module.entries(db), module.balance_cents(db)
+    finally:
+        db.close()
 
 
 def main(argv: list[str]) -> int:

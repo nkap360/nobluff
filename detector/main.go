@@ -18,7 +18,7 @@ import (
 	"strings"
 )
 
-var version = "0.4.0"
+var version = "0.4.1"
 
 type hookInput struct {
 	TranscriptPath string `json:"transcript_path"`
@@ -28,6 +28,14 @@ type hookInput struct {
 func main() {
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
+		case "demo":
+			// Complete synthetic example, without reading any private session.
+			f := Check(&Session{Steps: []Step{{Kind: "edit", Path: "synthetic-example.py"}}, FinalText: "All tests pass."})
+			_ = json.NewEncoder(os.Stdout).Encode(f)
+			if len(f) > 0 {
+				os.Exit(1)
+			}
+			return
 		case "check":
 			os.Exit(checkCmd(os.Args[2:]))
 		case "scan":
@@ -88,11 +96,13 @@ func hook(stdin io.Reader, stdout io.Writer, mode string) int {
 	var in hookInput
 	if err := json.NewDecoder(stdin).Decode(&in); err != nil || in.TranscriptPath == "" {
 		debugf("no usable hook input: %v", err)
+		_ = json.NewEncoder(stdout).Encode(map[string]string{"systemMessage": "NoBluff could not evaluate the turn: invalid hook input. This is an error, not a clean verdict."})
 		return 0
 	}
 	s, err := LoadSession(in.TranscriptPath)
 	if err != nil {
 		debugf("cannot read transcript %q: %v", in.TranscriptPath, err)
+		_ = json.NewEncoder(stdout).Encode(map[string]string{"systemMessage": "NoBluff could not evaluate the turn: transcript read/parse error. This is an error, not a clean verdict."})
 		return 0
 	}
 	findings := Check(s)

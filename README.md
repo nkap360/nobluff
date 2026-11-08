@@ -1,123 +1,99 @@
 # NoBluff
 
-[![ci](https://github.com/provenwork/nobluff/actions/workflows/ci.yml/badge.svg)](https://github.com/provenwork/nobluff/actions/workflows/ci.yml)
-[![release](https://img.shields.io/github/v/release/provenwork/nobluff?sort=semver)](https://github.com/provenwork/nobluff/releases)
-[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Agent Skills](https://img.shields.io/badge/format-Agent%20Skills-6f42c1.svg)](https://github.com/provenwork/skills)
-[![npm](https://img.shields.io/npm/v/nobluff.svg)](https://www.npmjs.com/package/nobluff)
-[![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-d97757.svg)](#install)
+**Review selected contradictions between a coding agent's final claim and its visible commands.**
 
-**Your coding agent stops saying "done" until it's proven.** NoBluff checks the agent's final answer against what the session actually did, and blocks the claims the transcript contradicts: "tests pass" when no test ran, "fixed" when the last run failed, "all green" when tests were skipped. It also ships five skills that turn Claude Code, Codex or Cursor into the prosecutor of its own output.
+NoBluff is a local, deterministic heuristic for Claude Code transcripts. It can flag a recognized claim such as “All tests pass” when no recognized test command followed the last recognized edit. It cannot prove that code is correct, that a command really tests the change, or that an agent is honest. Other agents can use the optional text skills; the executable Stop hook is for Claude Code.
 
-*Formerly Procureur. Old links and the old repository URL redirect here.*
+## Try a synthetic example first
 
-## Check your own history first
+From this checkout, without reading any private history:
 
 ```bash
-npx nobluff scan
+node npm/bin/nobluff.js demo
+# JSON finding: tests-not-run; exit status 1 is expected
+node npm/bin/nobluff.js check examples/synthetic-session.jsonl
+# Same finding; the fixture is deliberately synthetic
 ```
 
-Reads your local Claude Code sessions (`~/.claude/projects`), turn by turn, and counts the answers that claimed something the session itself contradicts. Nothing leaves your machine. `npx nobluff last` checks the latest session of the current folder.
+The local corrective candidate is **0.4.1**. It has not been published by this preparation. After that version is released, the equivalent zero-history first run is `npx nobluff@0.4.1 demo`. npm may contact its registry to acquire the package; the detector itself makes no network requests.
 
-## Install
+## What is checked
 
-```bash
-# Claude Code
-/plugin marketplace add provenwork/skills
-/plugin install nobluff@provenwork
+| Rule | Recognized claim | Transcript condition |
+|---|---|---|
+| `tests-not-run` | tests pass | no recognized test invocation after the last recognized edit |
+| `tests-failed` | tests pass / fixed / works | the last recognized test invocation failed |
+| `tests-skipped` | all tests pass | the last run reports skipped tests, without an explicit test-skipping disclosure |
+| `unverified-claim` | verified / works / fixed | code edited without a recognized check since |
 
-# Any agent that reads SKILL.md (Claude Code, Codex, Cursor, OpenClaw…)
-npx skills add provenwork/nobluff
-```
+Executable names are checked at command positions; `echo pytest` does not count as pytest. Some direct shell mutations, such as `sed -i`, invalidate earlier runs. This is a bounded shell parser, not a shell interpreter: wrappers, aliases, scripts that edit files, dynamic commands, other languages and unusual wording can be missed. Any recognized check can still be irrelevant or fabricated. Explicit quotation discussion and announced future checks are exempted; quoted result assertions are checked. False positives remain possible.
 
-Two lines in Claude Code, one command anywhere else. No dependencies: the detector is one small static binary per platform, shipped in the plugin. Other agents get the skills; the detector is a Claude Code hook.
+Exit codes for `check` and `demo`: **0** no finding, **1** findings to review, **2** input/operational error. Zero findings is not a certificate. `scan` reports distinct answers separately from rule findings and identifies parse coverage gaps. Its default is the 50 most recent top-level sessions; subagent folders are excluded. `last` falls back to the latest session of any project if this folder has none.
 
-## The detector: the agent cannot just promise
+## Install, update, disable, remove
 
-When the agent tries to end its turn, the NoBluff Stop hook reads the session transcript and compares the final answer with what actually ran. This is a real Claude Code session, told to edit without running anything and to finish with "All tests pass.":
+Claude Code marketplace installation, once the candidate is published:
 
 ```text
-Agent:   [edits payments.py, runs nothing] ... All tests pass.
-NoBluff: You say "All tests pass.", but no test command ran after your last file change.
-         Run the tests and show the result, or remove the claim.
-Agent:   "All tests pass." is a factual claim that requires running tests to be true.
-         I can't satisfy both honestly. Allow me to run the tests, or change the closing sentence.
+/plugin marketplace add provenwork/skills
+/plugin install nobluff@provenwork
 ```
 
-| Rule | Fires when the final answer says… | …but the transcript shows |
-|---|---|---|
-| `tests-not-run` | tests pass | no test command after the last file change |
-| `tests-failed` | tests pass / fixed / works | the last test run failed |
-| `tests-skipped` | all tests pass | the run skipped tests, and the answer never says so |
-| `unverified-claim` | verified / works / fixed | code was edited and nothing ran since |
+The plugin invokes the platform binary through its Stop hook. It blocks once, then warns on the correction round to avoid a loop. `NOBLUFF_MODE=warn` requests warnings only. Input/internal errors allow the turn to finish and emit a warning when possible; this availability choice is not a clean verdict.
 
-No model and no network: the same transcript always gives the same verdict, in milliseconds. Quoted, negated and announced claims ("I could not run the tests", "Now let me verify…") are not claims. It blocks once, then only warns, so it cannot trap the agent in a loop. Set `NOBLUFF_MODE=warn` to be told instead of blocked. Run it on any saved session with `bin/nobluff check <transcript.jsonl>`.
+Update through Claude Code's plugin manager and verify the selected version against its manifest. Disable or uninstall `nobluff` through the same plugin manager; verify the NoBluff Stop hook is absent before trusting that it is disabled. A manually copied hook must be removed from the settings file where it was added.
 
-## Claude Managed Agents (beta)
+For one-shot CLI use after publication, `npx nobluff@0.4.1 demo` does not create a global installation. npm may retain a cache; do not delete unrelated caches as an uninstall step. If installed globally, remove only this package with `npm uninstall -g nobluff`. For skills-only installs, use the skill installer's removal command or remove only the installed NoBluff skill directories; these text skills do not install a detector hook in other agents.
 
-Agents that run on their own, on a schedule or behind an API, are where an unverified "done" costs the most: nobody is watching the turn. Managed Agents has no Stop hook, so NoBluff runs on your server instead:
-
-1. Anthropic POSTs a `session.status_idled` webhook when the agent ends its turn.
-2. Your server lists the session's events and pipes them to `nobluff check -` (it reads the Managed Agents event format directly).
-3. If the final answer claims something the events contradict, the server sends the agent back with the reason. Once per turn, then report only.
-
-The full server is in [`examples/managed-agents/webhook.py`](examples/managed-agents/webhook.py). It complements outcomes, Managed Agents' rubric grader: the grader judges the deliverable; NoBluff checks that each claim matches something that actually ran.
-
-Checked on a live session (Sonnet 5.5): the agent edited a file, ran nothing, and ended with "All tests pass." NoBluff flagged it and sent the agent back; the agent ran the tests, said which behaviour no test covers, and the next verdict was clean. Both recordings are in [`detector/testdata`](detector/testdata). Status: beta. The detector and the push-back loop are validated on real events; the server has not yet handled a real webhook delivery.
-
-## Demo: the green test that charges twice
-
-![The shipped test passes; replaying the webhook books 149.00 EUR twice](assets/demo.svg)
-
-A payment webhook handler ships with a passing test. Payment providers retry webhooks, so the same event can arrive twice. Each delivery is booked, and one 149.00 EUR payment ends up as 298.00 EUR in the ledger. Reproduce it in 30 seconds with Python 3.10+ and nothing else, from [`examples/double-charge`](examples/double-charge) in a copy of this repository:
+Optional history review is an explicit next step:
 
 ```bash
-cd examples/double-charge
-python -m unittest test_payments   # OK: the suite is green
-python replay_check.py             # FAIL: 2 ledger entries, 298.00 EUR
-python replay_check.py --fixed     # PASS: 1 ledger entry, 149.00 EUR
+node npm/bin/nobluff.js scan
+node npm/bin/nobluff.js last
 ```
 
-"Tests pass" was true and the bug was still there. `evidence-first` makes the agent test the business rule (one payment, one entry) against the real-world failure, instead of stopping at the existing suite. CI runs these three commands on every push, so the demo cannot silently rot.
+These commands read local transcripts. No transcript is sent by the detector. Review output can quote final answers: keep it private when it contains private material. `NOBLUFF_DEBUG`, if configured, writes local diagnostic metadata to the named file.
 
-## How it works
+## Public, reproducible checks
 
-Each skill is a short `SKILL.md` your agent loads. Together they change what the agent is allowed to hand you:
+```bash
+python -m unittest discover -s tests -v
+cd detector
+# synthetic benchmark: complete constructions and expectations are in regressions_test.go
+go test -count=1 -run TestPublicBenchmark -v ./...
+go vet ./...
+go test -count=1 ./...
+cd ..
+python scripts/build.py --check
+python scripts/verify_package.py
+```
 
-| Skill | What it forbids | What it demands |
-|---|---|---|
-| `evidence-first` | "should work", "probably", untested claims | run it, cite `file:line`, show the output |
-| `no-placeholders` | to-do markers, "insert here", "optionally", three alternatives | one complete deliverable, decisions stated |
-| `fact-gate` | editing a file blind | callers, schemas and the user's instruction stated before the edit |
-| `verdict-format` | burying the answer under caveats | bottom line first, proof second, residual risk last |
-| `self-audit` | silent failures, swallowed errors | a closing list: verified / assumed / not checked |
+The benchmark contains **12 explicitly constructed cases: eight known bypass regressions and four comparison cases** (definition dated 2026-11-08). It is a regression corpus chosen around known defects, not a random sample and not a real-world accuracy estimate. Results must be recalculated with the commands above. No claim about user adoption, long-session bluff rates, or skill efficacy follows from it. Earlier releases quoted internal studies whose full protocols and corpora were not public; their historical notes remain labelled as such, and those numbers are not evidence for this candidate.
 
-Read them, edit them, delete the ones you disagree with.
+Builds use pinned **Go 1.27.3**, `CGO_ENABLED=0`, `-buildvcs=false -trimpath -ldflags="-s -w"`. `bin/build-manifest.json` records source and binary SHA256 values. `build.py --check` actually rebuilds all six binaries and compares bytes; `verify_package.py` enumerates and hashes the exact tarball, then executes its host binary on a synthetic fixture. Cross-compilation does not establish runtime compatibility on every target. There are no detector runtime dependencies; the npm launcher requires Node 16 or newer. Build tooling requires Python 3.10+ and the pinned Go compiler; npm packaging requires npm and Node.
 
-## Example: the contract in one answer
+## Payment replay example
 
-An illustrative answer to "fix the double charge", in the shape NoBluff asks for:
+`examples/double-charge` deliberately contains a handler whose one happy-path test misses duplicate delivery. Run from that directory:
 
-> **Fixed.** `handle_payment_succeeded` now records the provider `event_id` in `receipts` and books the ledger entry in the same transaction (`fixed/payments.py:21`).
-> **Proof:** `python replay_check.py --fixed` gives 1 ledger entry, 149.00 EUR, after 2 deliveries (and after 5, in `tests/test_double_charge.py`).
-> **Not checked:** concurrent deliveries across processes. SQLite serialises writes here; on Postgres, the unique key on `event_id` is what makes this safe.
+```bash
+python -m unittest test_payments
+python replay_check.py
+# Expected exit 1: two ledger entries, 298.00 EUR for two deliveries of 149.00 EUR
+python replay_check.py --fixed
+# Expected exit 0: one entry, 149.00 EUR
+```
 
-## Why
+This demonstrates a test-coverage gap, not a measured effect of installing text skills. Concurrent deliveries across processes are outside this demonstration.
 
-Eight years shipping GenAI in a Swiss private bank taught me one thing about AI output: the expensive failures are never the loud ones. They are the fluent, confident, unverified ones. NoBluff is the working style I impose on every agent I use, written down so you can impose it too.
+## Managed Agents adapter — experimental
 
-## Limitations
+`examples/managed-agents/webhook.py` requires separately installed `anthropic` and `flask`, API credentials and webhook signing configuration. Set `NOBLUFF_BIN` to a verified local binary and `NOBLUFF_STATE` to a private writable SQLite file. It never downloads a detector automatically.
 
-- It does not make the model smarter. It changes what the model is allowed to hand you.
-- It costs tokens: evidence means running things. Expect longer turns on small tasks and fewer round trips on real ones.
-- It is opinionated. If you like being offered three options, this is not for you.
-- What we measured, and what we did not. In BluffBench v1 (60 Claude Code sessions on five short, explicit tasks), the agent never bluffed, with or without NoBluff, and it never opened the NoBluff skills on its own: the skills alone had no measurable effect. That is why the detector exists. It was checked on recorded sessions (0 alerts on 62 honest ones, 32 of 32 caught when the test runs behind a "tests pass" claim are removed) and in one live session. Its effect on bluff rates in long, realistic tasks is not measured yet.
-- The detector only knows what the transcript shows. It catches claims about runs that did not happen or did not pass; it cannot tell whether a passing test checks the right thing.
+The adapter persists delivery/challenge state. Failed processing returns 503 and permits retry; a completed duplicate returns 204. An untrusted `[NoBluff]` prefix alone cannot suppress the challenge. Detector failure is an error, never a clean verdict. An ambiguous outbound send is not resent automatically: inspect the session events and reconcile its stored challenge before retrying. Run one server process; keep its database private and backed up. Offline SDK/Flask doubles cover control flow only. A real signed webhook, service deployment and end-to-end Managed Agents delivery are **not verified** by this candidate.
 
-## Contributing
+## Skills and contribution
 
-Bug reports and skill proposals are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md); agents working on this repo should read [AGENTS.md](AGENTS.md). Changes are listed in [CHANGELOG.md](CHANGELOG.md), and security reports go through [SECURITY.md](SECURITY.md).
+The five short instruction files are in `skills/`: evidence-first, fact-gate, no-placeholders, verdict-format and self-audit, plus the umbrella NoBluff skill. Their wording is an instruction contract; it does not enforce truth by itself. Read and edit them before use.
 
-## License
-
-[MIT](LICENSE).
+See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [CHANGELOG.md](CHANGELOG.md) and the [MIT license](LICENSE). This project was formerly named Procureur.

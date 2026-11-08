@@ -11,13 +11,14 @@ import (
 
 // Step is one thing the agent actually did, in order.
 type Step struct {
-	Kind    string // "edit" or "command"
-	Tool    string // Edit, Write, MultiEdit, NotebookEdit, Bash, PowerShell
-	Command string // shell command for Kind == "command"
-	Path    string // edited file for Kind == "edit"
-	Output  string // tool result text
-	Failed  bool   // tool result flagged as error
-	ID      string
+	Kind      string // "edit" or "command"
+	Tool      string // Edit, Write, MultiEdit, NotebookEdit, Bash, PowerShell
+	Command   string // shell command for Kind == "command"
+	Path      string // edited file for Kind == "edit"
+	Output    string // tool result text
+	Failed    bool   // tool result flagged as error
+	HasResult bool   // a completed tool result was observed
+	ID        string
 }
 
 // Session is what the detector knows: the steps, and what the agent said at the end.
@@ -147,9 +148,16 @@ func readEvents(r io.Reader) ([]event, error) {
 		sc.Buffer(make([]byte, 1024*1024), 64*1024*1024)
 		for sc.Scan() {
 			var e event
-			if json.Unmarshal(sc.Bytes(), &e) == nil {
-				events = append(events, e)
+			if len(bytes.TrimSpace(sc.Bytes())) == 0 {
+				continue
 			}
+			if err := json.Unmarshal(sc.Bytes(), &e); err != nil {
+				return nil, err
+			}
+			events = append(events, e)
+		}
+		if err := sc.Err(); err != nil {
+			return nil, err
 		}
 	}
 	return events, nil
@@ -205,10 +213,14 @@ func build(events []event) *Session {
 					continue
 				}
 				index[b.ID] = len(s.Steps) - 1
+				if shellTools[b.Name] && shellMayEdit(in.Command) {
+					s.Steps = append(s.Steps, Step{Kind: "edit", Tool: b.Name})
+				}
 			case "tool_result":
 				if i, ok := index[b.ToolUseID]; ok {
 					s.Steps[i].Output = resultText(b.Content)
 					s.Steps[i].Failed = b.IsError
+					s.Steps[i].HasResult = true
 				}
 			case "text":
 				if e.Type == "assistant" {

@@ -1,6 +1,6 @@
 {
   "name": "nobluff",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Audit your Claude Code sessions for claims the transcript contradicts: \"tests pass\" when no test ran, \"fixed\" when the last run failed. Local, no model, no network.",
   "keywords": ["claude-code", "ai-agents", "coding-agent", "verification", "hooks", "agent-skills", "hallucination", "testing"],
   "homepage": "https://github.com/provenwork/nobluff#readme",
@@ -8,7 +8,7 @@
   "bugs": "https://github.com/provenwork/nobluff/issues",
   "license": "MIT",
   "bin": { "nobluff": "bin/nobluff.js" },
-  "files": ["bin/", "README.md", "LICENSE"],
+  "files": ["bin/", "README.md", "LICENSE", "build-manifest.json", "examples/synthetic-session.jsonl"],
   "engines": { "node": ">=16" },
   "scripts": {
     "prepack": "node scripts/copy-binaries.js",

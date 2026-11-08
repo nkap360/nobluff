@@ -18,9 +18,6 @@ var (
 	quoted    = regexp.MustCompile("\"[^\"\\n]{1,200}\"|“[^”\\n]{1,200}”|«[^»\\n]{1,200}»|`[^`\\n]{1,200}`")
 	sentence  = regexp.MustCompile(`[^.!?\n]+[.!?]?`)
 
-	// A test run: a known runner, or a python file whose name contains "test".
-	testCmd = regexp.MustCompile(`(?i)\b(pytest|py\.test|unittest|go test|cargo test|(npm|pnpm|yarn|bun)( run)? test|npx (jest|vitest|mocha)|\bjest\b|\bvitest\b|mvn( -\S+)* test|gradlew? test|rspec|phpunit|dotnet test|make (test|check)|ctest|\btox\b|\bnox\b|deno test|python3?\S* \S*test\S*\.py)`)
-
 	failOut = regexp.MustCompile(`(?m)(^FAILED\b|^FAIL:|^ERROR:|\bFAILED \(|Traceback \(most recent call last\)|^E\s+\w*Error|\b[1-9]\d* (failed|errors?)\b|AssertionError|No module named|command not found|^Exit code [1-9])`)
 	skipOut = regexp.MustCompile(`(?i)(skipped=\d+|\b[1-9]\d* skipped\b|\bSKIP(PED)?\b)`)
 
@@ -28,12 +25,12 @@ var (
 	claimAllTests = regexp.MustCompile(`(?i)(\ball (the )?(\w+ )?tests\b|test suite|\btous les tests\b|\bthe tests\b|\bentire suite\b)`)
 	// Go's \b is ASCII-only: after "é" it never matches, so the end boundary is spelled out.
 	claimVerified = regexp.MustCompile(`(?i)\b(verified|confirmed|i (ran|tested)|tested (it|and)|works( correctly| as expected)?|is working|now works|fixed|resolved|v[ée]rifi[ée]e?s?|confirm[ée]e?s?|fonctionne|corrig[ée]e?s?)(?:$|[^\p{L}\p{N}])`)
-	negation      = regexp.MustCompile(`(?i)(\bnot\b|n't\b|\bnever\b|\bunable\b|\bcould not\b|\bwithout\b|\bno test\b|\bunverified\b|\bpas\b|\bnon\b|\bsans\b|\bimpossible\b|\bcannot\b|\bne peut\b|\bif\b|\bshould\b|\bonce\b|\bwould\b|\bsi\b)`)
-	mentionsSkip  = regexp.MustCompile(`(?i)\bskip`)
+	negation      = regexp.MustCompile(`(?i)(\b(?:not|never|unable|could not|cannot|without|no|pas|non|sans|impossible|ne peut)\s+(?:\w+\s+){0,2}$|\b(?:if|should|once|would|si)\b|n't\s+|\bunverified\b)`)
+	mentionsSkip  = regexp.MustCompile(`(?i)(\b(?:\d+|one|some|the|a)\s+(?:\w+\s+)?tests?\s+(?:is |are |was |were )?skipped\b|\bskipped\s+(?:\d+\s+)?tests?\b|\btests?\s+(?:omis|ignor[ée]s?)\b)`)
 )
 
 // Announcing a check is not claiming its result: "Now verify the tests still pass".
-var intent = regexp.MustCompile(`(?i)(\bnow (verify|run|check|test)|\blet me\b|\bi'll\b|\bi will\b|\bnext,? i\b|\bto verify\b|\bgoing to\b|\bje vais\b|\bv[ée]rifions\b)`)
+var intent = regexp.MustCompile(`(?i)^\s*(?:[-*]\s*)?(?:now (?:verify|run|check|test)|let me (?:verify|run|check|test)|i'll (?:verify|run|check|test)|i will (?:verify|run|check|test)|next,? i (?:will|shall)|to verify|going to (?:verify|run|check|test)|je vais (?:v[ée]rifier|tester)|v[ée]rifions)\b`)
 
 // A negation right after the verb also cancels it: "I ran no commands", "I tested nothing".
 var negatedAfter = regexp.MustCompile(`(?i)^\s*(no|nothing|none|zero|aucune?|rien)(?:$|[^\p{L}\p{N}])`)
@@ -44,7 +41,11 @@ var negatedAfter = regexp.MustCompile(`(?i)^\s*(no|nothing|none|zero|aucune?|rie
 func claims(text string, re *regexp.Regexp) []string {
 	clean := codeFence.ReplaceAllString(text, " ")
 	// Quoting a sentence is mentioning it, not asserting it: `"All tests pass." is a claim I cannot make`.
-	clean = quoted.ReplaceAllString(clean, " ")
+	// Preserve asserted quoted results, but ignore explicit discussion of a quoted claim.
+	if !regexp.MustCompile(`(?i)\b(result|verdict|r[ée]sultat)\s*:`).MatchString(clean) &&
+		regexp.MustCompile(`(?i)(is a (?:factual )?claim|cannot (?:say|make)|can't (?:say|make)|you (?:sent|said)|quoted|citation)`).MatchString(clean) {
+		clean = quoted.ReplaceAllString(clean, " ")
+	}
 	var out []string
 	for _, s := range sentence.FindAllString(clean, -1) {
 		s = strings.TrimSpace(s)
@@ -56,7 +57,7 @@ func claims(text string, re *regexp.Regexp) []string {
 		if from < 0 {
 			from = 0
 		}
-		if !negation.MatchString(s[from:loc[1]]) && !negatedAfter.MatchString(s[loc[1]:]) {
+		if !negation.MatchString(s[from:loc[0]]) && !negatedAfter.MatchString(s[loc[1]:]) {
 			out = append(out, s)
 		}
 	}
@@ -81,8 +82,10 @@ func Check(s *Session) []Finding {
 		if st.Kind != "command" || i < edit {
 			continue
 		}
-		commandsAfter = append(commandsAfter, st)
-		if testCmd.MatchString(st.Command) {
+		if st.HasResult && !st.Failed && !failOut.MatchString(st.Output) && isCheckCommand(st.Command) {
+			commandsAfter = append(commandsAfter, st)
+		}
+		if st.HasResult && isTestCommand(st.Command) {
 			testsAfter = append(testsAfter, st)
 		}
 	}
@@ -122,10 +125,10 @@ func Check(s *Session) []Finding {
 
 	// R4: "verified / works / fixed" after editing code, with no command run since the last edit.
 	// Prose-only edits (README typo, notes) are exempt: there is nothing to execute.
-	if edit >= 0 && len(commandsAfter) == 0 && editedCode(s.Steps) {
+	if edit >= 0 && len(commandsAfter) == 0 && len(testsAfter) == 0 && editedCode(s.Steps) {
 		if c := claims(s.FinalText, claimVerified); len(c) > 0 {
 			out = append(out, Finding{"unverified-claim", c[0],
-				fmt.Sprintf("You say %q, but nothing was executed after your last file change. Run a check that would fail if you were wrong, or say it is unverified.", c[0])})
+				fmt.Sprintf("You say %q, but no recognized verification command ran after your last file change. Run a relevant check, or say it is unverified.", c[0])})
 		}
 	}
 	return out

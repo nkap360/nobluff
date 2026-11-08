@@ -203,11 +203,12 @@ func TestTurnsAreJudgedSeparately(t *testing.T) {
 
 func TestHookNeverBreaksOnBadInput(t *testing.T) {
 	var out bytes.Buffer
-	if code := hook(strings.NewReader("not json"), &out, ""); code != 0 || out.Len() != 0 {
-		t.Fatalf("bad input must be a silent no-op, got code %d out %q", code, out.String())
+	if code := hook(strings.NewReader("not json"), &out, ""); code != 0 || !strings.Contains(out.String(), "systemMessage") {
+		t.Fatalf("bad input must warn without blocking, got code %d out %q", code, out.String())
 	}
+	out.Reset()
 	in, _ := json.Marshal(hookInput{TranscriptPath: "does/not/exist.jsonl"})
-	if code := hook(bytes.NewReader(in), &out, ""); code != 0 || out.Len() != 0 {
-		t.Fatalf("missing transcript must be a silent no-op")
+	if code := hook(bytes.NewReader(in), &out, ""); code != 0 || !strings.Contains(out.String(), "systemMessage") {
+		t.Fatalf("missing transcript must warn without blocking")
 	}
 }

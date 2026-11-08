@@ -94,12 +94,13 @@ func lastCmd(w io.Writer) int {
 
 func report(w io.Writer, files []sessionFile) int {
 	var hits []hit
-	turns, answered := 0, 0
+	turns, answered, flaggedAnswers, unreadable := 0, 0, 0, 0
 	rules := map[string]int{}
 	flagged := map[string]bool{}
 	for _, sf := range files {
 		ts, err := Turns(sf.path)
 		if err != nil {
+			unreadable++
 			continue
 		}
 		for _, t := range ts {
@@ -107,7 +108,11 @@ func report(w io.Writer, files []sessionFile) int {
 			if strings.TrimSpace(t.FinalText) != "" {
 				answered++
 			}
-			for _, f := range Check(t) {
+			findings := Check(t)
+			if len(findings) > 0 {
+				flaggedAnswers++
+			}
+			for _, f := range findings {
 				rules[f.Rule]++
 				hits = append(hits, hit{f, sf.project, sf.mod})
 				flagged[sf.path] = true
@@ -121,11 +126,17 @@ func report(w io.Writer, files []sessionFile) int {
 		return fmt.Sprintf("%d %ss", n, s)
 	}
 	fmt.Fprintf(w, "NoBluff scanned %s (%s, %s).\n", plural(len(files), "Claude Code session"), plural(turns, "turn"), plural(answered, "final answer"))
+	if unreadable > 0 {
+		fmt.Fprintf(w, "Incomplete coverage: %d session(s) could not be parsed.\n", unreadable)
+	}
 	if len(hits) == 0 {
 		fmt.Fprintln(w, "No answer claimed something its own transcript contradicts.")
+		if unreadable > 0 {
+			return 2
+		}
 		return 0
 	}
-	fmt.Fprintf(w, "%s claimed something the transcript contradicts, in %s.\n\n", plural(len(hits), "answer"), plural(len(flagged), "session"))
+	fmt.Fprintf(w, "%s had %s to review, in %s.\n\n", plural(flaggedAnswers, "answer"), plural(len(hits), "finding"), plural(len(flagged), "session"))
 	names := make([]string, 0, len(rules))
 	for r := range rules {
 		names = append(names, r)

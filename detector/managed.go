@@ -53,9 +53,16 @@ func managedEvents(data []byte) []maEvent {
 		sc.Buffer(make([]byte, 1024*1024), 64*1024*1024)
 		for sc.Scan() {
 			var e maEvent
-			if json.Unmarshal(sc.Bytes(), &e) == nil {
-				events = append(events, e)
+			if len(bytes.TrimSpace(sc.Bytes())) == 0 {
+				continue
 			}
+			if json.Unmarshal(sc.Bytes(), &e) != nil {
+				return nil
+			}
+			events = append(events, e)
+		}
+		if sc.Err() != nil {
+			return nil
 		}
 	}
 	managed := false
@@ -120,6 +127,9 @@ func managedTurns(events []maEvent) []*Session {
 			}
 			index[e.ID] = len(cur.Steps) - 1
 			pending = append(pending, len(cur.Steps)-1)
+			if maShell[e.Name] && shellMayEdit(in.Command) {
+				cur.Steps = append(cur.Steps, Step{Kind: "edit", Tool: e.Name})
+			}
 		case "agent.tool_result":
 			i, ok := -1, false
 			for _, link := range []string{e.ToolUseID, e.ToolUseEventID, e.AgentToolUseID} {
@@ -134,6 +144,7 @@ func managedTurns(events []maEvent) []*Session {
 			if ok {
 				cur.Steps[i].Output = textOf(e.Content)
 				cur.Steps[i].Failed = e.IsError
+				cur.Steps[i].HasResult = true
 				for k, p := range pending {
 					if p == i {
 						pending = append(pending[:k], pending[k+1:]...)

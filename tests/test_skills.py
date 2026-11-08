@@ -25,6 +25,8 @@ def frontmatter(path: Path) -> dict:
             key, value = line.split(":", 1)
             value = value.strip()
             quoted = len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'"
+            if not quoted and (not value or value[0] in "[{\"'|>" or value in ("null", "true", "false")):
+                raise ValueError(f"{path}: only nonempty scalar frontmatter strings are supported")
             if not quoted and (": " in value or value.endswith(":") or " #" in value):
                 raise ValueError(f"{path}: unquoted '{key}' value is invalid YAML; wrap it in double quotes")
             out[key.strip()] = value[1:-1] if quoted else value
@@ -70,6 +72,21 @@ class SkillPack(unittest.TestCase):
     def test_changelog_mentions_current_version(self):
         manifest = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
         self.assertIn(f"## {manifest['version']}", (ROOT / "CHANGELOG.md").read_text(encoding="utf-8"))
+
+    def test_version_matches_source_package_and_manifest(self):
+        plugin = json.loads((ROOT / '.claude-plugin/plugin.json').read_text(encoding='utf-8'))['version']
+        package = json.loads((ROOT / 'npm/package.json').read_text(encoding='utf-8'))['version']
+        source = re.search(r'var version = "([^"]+)"', (ROOT / 'detector/main.go').read_text(encoding='utf-8')).group(1)
+        self.assertEqual(plugin, package)
+        self.assertEqual(package, source)
+
+    def test_frontmatter_rejects_unclosed_flow_sequence(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'SKILL.md'
+            path.write_text('---\nname: demo\ndescription: [this is not a scalar\n---\n', encoding='utf-8')
+            with self.assertRaises(ValueError):
+                frontmatter(path)
 
 
 if __name__ == "__main__":

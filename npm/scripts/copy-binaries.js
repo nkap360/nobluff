@@ -11,4 +11,7 @@ for (const n of names) {
   fs.copyFileSync(from, path.join(dst, `nobluff-${n}`));
 }
 for (const f of ["LICENSE"]) fs.copyFileSync(path.join(__dirname, "..", "..", f), path.join(__dirname, "..", f));
+fs.copyFileSync(path.join(src, "build-manifest.json"), path.join(__dirname, "..", "build-manifest.json"));
+fs.mkdirSync(path.join(__dirname, "..", "examples"), { recursive: true });
+fs.copyFileSync(path.join(src, "..", "examples", "synthetic-session.jsonl"), path.join(__dirname, "..", "examples", "synthetic-session.jsonl"));
 console.log(`copied ${names.length} binaries`);
