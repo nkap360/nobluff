@@ -1,6 +1,6 @@
 {
   "name": "nobluff",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "Audit your Claude Code sessions for claims the transcript contradicts: \"tests pass\" when no test ran, \"fixed\" when the last run failed. Local, no model, no network.",
   "keywords": ["claude-code", "ai-agents", "coding-agent", "verification", "hooks", "agent-skills", "hallucination", "testing"],
   "homepage": "https://github.com/provenwork/nobluff#readme",

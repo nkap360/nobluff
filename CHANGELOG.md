@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.4 — 2026-11-09
 
 - A shell command that changes a file and then tests it (`sed -i … && pytest`, `printf … > notes.txt && python -m unittest`) now counts as tested after the change. 0.4.3 recorded the change after the whole command, so the test run inside it never counted. A test followed by a change in the same command (`pytest && sed -i …`) is still flagged.
 - Deleting only build artifacts, caches, screenshots or prose files (`rm -rf .playwright-mcp`, `Remove-Item -Recurse node_modules, dist`) is no longer a file change. Deleting anything else, including a source file, still is.

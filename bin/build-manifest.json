@@ -1,28 +1,28 @@
 {
   "binaries": {
     "nobluff-darwin-amd64": {
-      "bytes": 3075072,
-      "sha256": "4f2918fd0725b9771596dead8b29d5d140aa62cd271b05e9a9f100a53af30819"
+      "bytes": 3083264,
+      "sha256": "19cf051da42b3acf9595da9139986ede1fab9de090993294180f24c7460c82c9"
     },
     "nobluff-darwin-arm64": {
-      "bytes": 2901058,
-      "sha256": "d513b3b8d8c61e60567c94a8c04e83f9556cf60f291237fccbbe0aca614d504d"
+      "bytes": 2917570,
+      "sha256": "8be5ce0d26513d187b92265e728dc5d326233659a10249f739267c21545d7c07"
     },
     "nobluff-linux-amd64": {
-      "bytes": 3043488,
-      "sha256": "370bc0098beb6513882f2856577cbab311c335b30243e4d16b1252fbdde2e312"
+      "bytes": 3047584,
+      "sha256": "d3dd1a50f95a6737b4319824bc237fc8b8ccde859c1f563b2df562e02dd910b2"
     },
     "nobluff-linux-arm64": {
       "bytes": 2883744,
-      "sha256": "2f16d08785c14730415b1d93595882d876b9fd797ddd4f435e7c2f46ccdbb2a7"
+      "sha256": "5116fa55a3430cd360fd7fea0fbd97639ec20f3c558f08ab893edcf415a90bbc"
     },
     "nobluff-windows-amd64.exe": {
-      "bytes": 3226112,
-      "sha256": "b2de50b87d9c47be6a98fe627aa42ae148d5eb93470b1dbe77df88bbc66f8930"
+      "bytes": 3234304,
+      "sha256": "78a39c4e9eebfad54cdf95cc42e0cc222bdf87d881be81f22db37fae816c51e4"
     },
     "nobluff-windows-arm64.exe": {
-      "bytes": 2985472,
-      "sha256": "6bfd2ee44a7c6301b21607622264b0f356d274be2ca9c1d498a75b169d14035b"
+      "bytes": 2992640,
+      "sha256": "0cfa56322a50f4c27479f1f4a93c39be24ed004bb3a1116aad392ea7f8066228"
     }
   },
   "flags": [
@@ -31,14 +31,14 @@
     "-ldflags=-s -w"
   ],
   "sources": {
-    "detector/commands.go": "c50389e040097bfe93121e9cd08be4e9910169504f69326bd67d226f4169e291",
+    "detector/commands.go": "74d3029abab3c7f6faa1de7382eeab725a52a7a1dfe7a5e25f8e033f8027df5d",
     "detector/go.mod": "777b87c0e2309d76ece1138f8e8968f64bee2632ae2421a9d72976143edaa224",
-    "detector/main.go": "f3ab38fcb6d31d4ffaa49c51327c207ba678aeda061e3d53f2613689b674698a",
-    "detector/managed.go": "3e6fa37509801af241a57432a791b884ada686b3b12851f60b01abd1f1d57673",
-    "detector/rules.go": "253b0750277b2b0b429fff190d20bb1101ae674de93d858bc7cedce1f19f5ff8",
+    "detector/main.go": "05f3a1a41bf5144c09e3cee3e405c0de5821d344a65d772daa014cdf2d03930f",
+    "detector/managed.go": "c2f3fee4804e3f5acfd0859ce4c45380b79a6aa1486b0ca886b36792a5efa5c7",
+    "detector/rules.go": "90093f331a7e01f70f464a8202b7410029705981d23abdb165aecaf6afffd0d2",
     "detector/scan.go": "76d1ab26e2104097f8652e3b9ee2a53c34c6eef008de9b7de699be965739e896",
-    "detector/transcript.go": "d823305fbe2107d8263bacfe438fe1e9ef81a6ccb33dbc15de5f661a204b3b87"
+    "detector/transcript.go": "dfa4d58b2858169a77b90af20d9f21ee1a89b59165a544f98662c4d083876e71"
   },
   "toolchain": "go1.27.3",
-  "version": "0.4.3"
+  "version": "0.4.4"
 }
