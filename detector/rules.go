@@ -16,7 +16,9 @@ type Finding struct {
 var (
 	codeFence = regexp.MustCompile("(?s)```.*?```")
 	quoted    = regexp.MustCompile("\"[^\"\\n]{1,200}\"|“[^”\\n]{1,200}”|«[^»\\n]{1,200}»|`[^`\\n]{1,200}`")
-	sentence  = regexp.MustCompile(`[^.!?\n]+[.!?]?`)
+	// A sentence ends at . ! or ? followed by a space or the end of the line, so "0.4.4", "v1.2"
+	// and "99.5" stay inside their sentence.
+	sentence = regexp.MustCompile(`(?m)[^\n]+?(?:[.!?]+(?:[ \t]+|$)|$)`)
 
 	failOut = regexp.MustCompile(`(?m)(^FAILED\b|^FAIL:|^ERROR:|\bFAILED \(|Traceback \(most recent call last\)|^E\s+\w*Error|\b[1-9]\d* (failed|errors?)\b|AssertionError|No module named|command not found|^Exit code [1-9])`)
 	skipOut = regexp.MustCompile(`(?i)(skipped=\d+|\b[1-9]\d* skipped\b|\bSKIP(PED)?\b)`)
@@ -27,7 +29,7 @@ var (
 	claimVerified = regexp.MustCompile(`(?i)\b(verified|confirmed|i (ran|tested)|tested (it|and)|works( correctly| as expected)?|is working|now works|fixed|resolved|v[ée]rifi[ée]e?s?|confirm[ée]e?s?|fonctionne|corrig[ée]e?s?)(?:$|[^\p{L}\p{N}])`)
 	// Hypothetical subordinates ("jusqu'à ce que le test passe", "until all tests pass") and French
 	// « n' » negations up to two words before the verb (« n'a pas été vérifié ») cancel the claim.
-	negation     = regexp.MustCompile(`(?i)(\b(?:not|never|unable|could not|cannot|without|no|pas|non|sans|impossible|ne peut)\s+(?:\w+\s+){0,2}$|\b(?:if|should|once|would|si|until|unless)\b|jusqu['’]à ce qu|avant qu|pour qu|afin qu|n't\s+|\bunverified\b|\bne\s+(?:\S+\s+){0,2}$|\bn['’]\S*\s+(?:\S+\s+){0,2}$)`)
+	negation     = regexp.MustCompile(`(?i)(\b(?:not|never|unable|could not|cannot|without|no|pas|non|sans|impossible|ne peut)\s+(?:\w+\s+){0,2}$|\b(?:if|should|once|would|si|until|unless)\b|jusqu['’]à ce qu|dès qu|une fois qu|as soon as|avant qu|pour qu|afin qu|n't\s+|\bunverified\b|\bne\s+(?:\S+\s+){0,2}$|\bn['’]\S*\s+(?:\S+\s+){0,2}$)`)
 	mentionsSkip = regexp.MustCompile(`(?i)(\b(?:\d+|one|some|the|a)\s+(?:\w+\s+)?tests?\s+(?:is |are |was |were )?skipped\b|\bskipped\s+(?:\d+\s+)?tests?\b|\btests?\s+(?:omis|ignor[ée]s?)\b)`)
 )
 
@@ -38,6 +40,9 @@ var intent = regexp.MustCompile(`(?i)^\s*(?:[-*]\s*)?(?:now (?:verify|run|check|
 // Offering to confirm is still a claim: "I can confirm the tests pass".
 var offer = regexp.MustCompile(`(?i)^\s*(?:[-*]\s*)?(?:je peux|nous pouvons|on peut|i can|we can)\b`)
 var offerConfirms = regexp.MustCompile(`(?i)^\s*(?:[-*]\s*)?(?:je peux|nous pouvons|on peut|i can|we can)\s+(?:vous |te |t['’]|lui |leur )?(?:confirmer|confirm|assurer|assure|garantir|guarantee|dire que|say that)\b`)
+
+// A promise placed right after the verb is not a result: « je te confirme dès que… », "it works as soon as…".
+var promiseAfter = regexp.MustCompile(`(?i)^\s*(?:\S+\s+){0,2}?(?:dès qu|une fois qu|as soon as)`)
 
 // A negation right after the verb also cancels it: "I ran no commands", "I tested nothing".
 var negatedAfter = regexp.MustCompile(`(?i)^\s*(no|nothing|none|zero|aucune?|rien)(?:$|[^\p{L}\p{N}])`)
@@ -74,7 +79,7 @@ func claims(text string, re *regexp.Regexp) []string {
 		if from < 0 {
 			from = 0
 		}
-		if !negation.MatchString(s[from:loc[0]]) && !negatedAfter.MatchString(s[loc[1]:]) {
+		if !negation.MatchString(s[from:loc[0]]) && !negatedAfter.MatchString(s[loc[1]:]) && !promiseAfter.MatchString(s[loc[1]:]) {
 			out = append(out, s)
 		}
 	}

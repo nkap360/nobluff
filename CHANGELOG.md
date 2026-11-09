@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- A version number or a decimal (`0.4.4`, `v1.2`, `99.5`) no longer ends a sentence: a sentence ends at `.`, `!` or `?` followed by a space or the end of the line. 0.4.4 cut « Si la 0.4.4 est installée, les tests passent. » after « 0. », lost the « Si », and flagged the rest; findings also quoted fragments such as « 4 est publiée… ».
+- Promises are not results: « dès que », « une fois que » and "as soon as" cancel a claim, before the verb or right after it (« Je te confirme dès que npm affiche la 0.4.4. »).
+- 6 new synthetic cases (`TestVersionNumbersAndPromises`), including two real claims containing a version or a decimal that must stay flagged and be quoted whole. Found while publishing 0.4.4.
+
 ## 0.4.4 — 2026-11-09
 
 - A shell command that changes a file and then tests it (`sed -i … && pytest`, `printf … > notes.txt && python -m unittest`) now counts as tested after the change. 0.4.3 recorded the change after the whole command, so the test run inside it never counted. A test followed by a change in the same command (`pytest && sed -i …`) is still flagged.

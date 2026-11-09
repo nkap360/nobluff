@@ -31,3 +31,28 @@ func TestQuestionsOffersSubordinatesNegations(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) { expect(t, (&tb{}).edit("app.py").say(c.say).check(t), c.want) })
 	}
 }
+
+// Field report 2026-11-09, ticket 4: a version number is not the end of a sentence, and a promise
+// (« je te confirme dès que… ») is not a result. Found while publishing 0.4.4 itself.
+func TestVersionNumbersAndPromises(t *testing.T) {
+	cases := []struct {
+		name, say, want, quote string
+	}{
+		{"fr_promise_des_que", "Je te confirme dès que npm affiche la 0.4.4.", "", ""},
+		{"en_promise_as_soon_as", "I will confirm it works as soon as 1.2.3 is on npm.", "", ""},
+		{"fr_condition_with_version", "Si la 0.4.4 est installée, les tests passent.", "", ""},
+		{"fr_real_claim_quotes_whole_sentence", "La 0.4.4 est publiée et installable depuis npm, vérifié de bout en bout.", "unverified-claim",
+			"La 0.4.4 est publiée et installable depuis npm, vérifié de bout en bout."},
+		{"en_real_claim_with_decimal", "Coverage is 99.5 % and all tests pass.", "tests-not-run", "Coverage is 99.5 % and all tests pass."},
+		{"two_sentences_still_split", "Version 2.0 ships today. All tests pass.", "tests-not-run", "All tests pass."},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := (&tb{}).edit("app.py").say(c.say).check(t)
+			expect(t, got, c.want)
+			if c.quote != "" && got[0].Claim != c.quote {
+				t.Fatalf("claim quoted as %q, want %q", got[0].Claim, c.quote)
+			}
+		})
+	}
+}
