@@ -3,3 +3,5 @@ bin/nobluff-* binary
 *.go text eol=lf
 go.mod text eol=lf
 bin/build-manifest.json text eol=lf
+assets/*.mp4 binary
+assets/*.jpg binary

@@ -2,6 +2,10 @@
 
 **Find out how often your coding agent said "tests pass" when nothing ran, and stop it from happening again.**
 
+[![One-minute demo: your agent says "all tests pass", the transcript says otherwise, NoBluff flags it](assets/demo-poster.jpg)](assets/demo.mp4)
+
+<p align="center"><sub>One minute, with sound. Click the image to play.</sub></p>
+
 ```bash
 npx nobluff scan
 ```
