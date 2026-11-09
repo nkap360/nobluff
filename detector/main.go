@@ -18,7 +18,7 @@ import (
 	"strings"
 )
 
-var version = "0.4.4"
+var version = "0.4.5"
 
 type hookInput struct {
 	TranscriptPath string `json:"transcript_path"`
