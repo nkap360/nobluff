@@ -25,12 +25,19 @@ var (
 	claimAllTests = regexp.MustCompile(`(?i)(\ball (the )?(\w+ )?tests\b|test suite|\btous les tests\b|\bthe tests\b|\bentire suite\b)`)
 	// Go's \b is ASCII-only: after "é" it never matches, so the end boundary is spelled out.
 	claimVerified = regexp.MustCompile(`(?i)\b(verified|confirmed|i (ran|tested)|tested (it|and)|works( correctly| as expected)?|is working|now works|fixed|resolved|v[ée]rifi[ée]e?s?|confirm[ée]e?s?|fonctionne|corrig[ée]e?s?)(?:$|[^\p{L}\p{N}])`)
-	negation      = regexp.MustCompile(`(?i)(\b(?:not|never|unable|could not|cannot|without|no|pas|non|sans|impossible|ne peut)\s+(?:\w+\s+){0,2}$|\b(?:if|should|once|would|si)\b|n't\s+|\bunverified\b|\bne\s+(?:\S+\s+){0,2}$|\bn['’]\S*\s+(?:\S+\s+)?$)`)
-	mentionsSkip  = regexp.MustCompile(`(?i)(\b(?:\d+|one|some|the|a)\s+(?:\w+\s+)?tests?\s+(?:is |are |was |were )?skipped\b|\bskipped\s+(?:\d+\s+)?tests?\b|\btests?\s+(?:omis|ignor[ée]s?)\b)`)
+	// Hypothetical subordinates ("jusqu'à ce que le test passe", "until all tests pass") and French
+	// « n' » negations up to two words before the verb (« n'a pas été vérifié ») cancel the claim.
+	negation     = regexp.MustCompile(`(?i)(\b(?:not|never|unable|could not|cannot|without|no|pas|non|sans|impossible|ne peut)\s+(?:\w+\s+){0,2}$|\b(?:if|should|once|would|si|until|unless)\b|jusqu['’]à ce qu|avant qu|pour qu|afin qu|n't\s+|\bunverified\b|\bne\s+(?:\S+\s+){0,2}$|\bn['’]\S*\s+(?:\S+\s+){0,2}$)`)
+	mentionsSkip = regexp.MustCompile(`(?i)(\b(?:\d+|one|some|the|a)\s+(?:\w+\s+)?tests?\s+(?:is |are |was |were )?skipped\b|\bskipped\s+(?:\d+\s+)?tests?\b|\btests?\s+(?:omis|ignor[ée]s?)\b)`)
 )
 
 // Announcing a check is not claiming its result: "Now verify the tests still pass".
 var intent = regexp.MustCompile(`(?i)^\s*(?:[-*]\s*)?(?:now (?:verify|run|check|test)|let me (?:verify|run|check|test)|i'll (?:verify|run|check|test)|i will (?:verify|run|check|test)|next,? i (?:will|shall)|to verify|going to (?:verify|run|check|test)|je vais (?:v[ée]rifier|tester)|v[ée]rifions)\b`)
+
+// Offering a check is not claiming its result: "Je peux ensuite chercher…", "I can verify it next".
+// Offering to confirm is still a claim: "I can confirm the tests pass".
+var offer = regexp.MustCompile(`(?i)^\s*(?:[-*]\s*)?(?:je peux|nous pouvons|on peut|i can|we can)\b`)
+var offerConfirms = regexp.MustCompile(`(?i)^\s*(?:[-*]\s*)?(?:je peux|nous pouvons|on peut|i can|we can)\s+(?:vous |te |t['’]|lui |leur )?(?:confirmer|confirm|assurer|assure|garantir|guarantee|dire que|say that)\b`)
 
 // A negation right after the verb also cancels it: "I ran no commands", "I tested nothing".
 var negatedAfter = regexp.MustCompile(`(?i)^\s*(no|nothing|none|zero|aucune?|rien)(?:$|[^\p{L}\p{N}])`)
@@ -45,6 +52,13 @@ func claims(text string, re *regexp.Regexp) []string {
 		s = strings.TrimSpace(s)
 		loc := re.FindStringIndex(s)
 		if s == "" || loc == nil || intent.MatchString(s) {
+			continue
+		}
+		// A question asks, it does not assert: "Tu veux que je vérifie… ?", "Want me to check?".
+		if strings.HasSuffix(s, "?") {
+			continue
+		}
+		if offer.MatchString(s) && !offerConfirms.MatchString(s) {
 			continue
 		}
 		// A line that introduces a list ("**What was checked:**") announces content, it asserts nothing.

@@ -6,6 +6,9 @@
 - Deleting only build artifacts, caches, screenshots or prose files (`rm -rf .playwright-mcp`, `Remove-Item -Recurse node_modules, dist`) is no longer a file change. Deleting anything else, including a source file, still is.
 - A prose file written after a green run (README, notes, changelog, an agent's memory file) no longer invalidates the run: "the last file change" now ignores `.md`, `.txt`, `.rst` and similar files. A code change after the note still does.
 - 15 new synthetic cases (`detector/ordering_test.go`), each false alarm paired with the true alarm that must stay. Origin: a field report of 13 Stop-hook blocks in one long session, 2026-11-09.
+- Questions (« Tu veux que je vérifie… ? », "Want me to check?") and offers (« Je peux ensuite chercher… », "I can verify it next") are no longer read as claims. Offering to confirm is still a claim ("I can confirm the tests pass").
+- Hypothetical subordinates (« jusqu'à ce que le test passe », « pour que », « avant que », "until", "unless") and French « n' » negations up to two words before the verb (« n'a pas été vérifié ») now cancel the claim. « Le test passe. » and « Le rendu a été vérifié. » are still flagged.
+- 13 new synthetic cases (`detector/claims_test.go`), with the same pairing.
 
 ## 0.4.3 — 2026-11-08
 
