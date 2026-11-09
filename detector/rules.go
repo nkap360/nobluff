@@ -67,14 +67,18 @@ func claims(text string, re *regexp.Regexp) []string {
 	return out
 }
 
+// lastEdit is the last change a test could contradict. A prose file (README, notes, an agent's
+// memory) written after a green run does not invalidate the run: nothing executes it.
 func lastEdit(steps []Step) int {
 	for i := len(steps) - 1; i >= 0; i-- {
-		if steps[i].Kind == "edit" {
+		if steps[i].Kind == "edit" && !isProseEdit(steps[i]) {
 			return i
 		}
 	}
 	return -1
 }
+
+func isProseEdit(st Step) bool { return st.Path != "" && proseExt.MatchString(st.Path) }
 
 // Check applies every rule. Each rule only fires on a claim the transcript contradicts.
 func Check(s *Session) []Finding {
@@ -141,7 +145,7 @@ var proseExt = regexp.MustCompile(`(?i)\.(md|mdx|txt|rst|adoc)$`)
 
 func editedCode(steps []Step) bool {
 	for _, st := range steps {
-		if st.Kind == "edit" && (st.Path == "" || !proseExt.MatchString(st.Path)) {
+		if st.Kind == "edit" && !isProseEdit(st) {
 			return true
 		}
 	}

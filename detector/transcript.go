@@ -208,12 +208,16 @@ func build(events []event) *Session {
 					}
 					s.Steps = append(s.Steps, Step{Kind: "edit", Tool: b.Name, Path: p, ID: b.ID})
 				case shellTools[b.Name]:
+					// `sed -i … && pytest` changed the file before testing it: record the edit first.
+					if shellEditOrder(in.Command) == "before" {
+						s.Steps = append(s.Steps, Step{Kind: "edit", Tool: b.Name})
+					}
 					s.Steps = append(s.Steps, Step{Kind: "command", Tool: b.Name, Command: in.Command, ID: b.ID})
 				default:
 					continue
 				}
 				index[b.ID] = len(s.Steps) - 1
-				if shellTools[b.Name] && shellMayEdit(in.Command) {
+				if shellTools[b.Name] && shellEditOrder(in.Command) == "after" {
 					s.Steps = append(s.Steps, Step{Kind: "edit", Tool: b.Name})
 				}
 			case "tool_result":

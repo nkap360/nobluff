@@ -164,3 +164,81 @@ func pythonArgs(w []string) []string {
 	}
 	return append(out, w[min(i, len(w)):]...)
 }
+
+// shellEditOrder places the file changes of a shell command relative to the checks it runs:
+// "none" (no change, or only build artifacts deleted), "before" (every change precedes the last
+// test or check of the command, as in `sed -i … && pytest`), or "after" (a change follows the
+// last check, or cannot be attributed to a part of the command).
+func shellEditOrder(command string) string {
+	if !shellMayEdit(command) || cleanupOnly(command) {
+		return "none"
+	}
+	lastCheck, lastMutation := -1, -1
+	for i, p := range commandParts(command) {
+		joined := strings.Join(p, " ")
+		if isCheckCommand(joined) {
+			lastCheck = i
+		}
+		if shellMutation.MatchString(joined) {
+			lastMutation = i
+		}
+	}
+	if lastMutation >= 0 && lastCheck >= 0 && lastMutation <= lastCheck {
+		return "before"
+	}
+	return "after"
+}
+
+// Build output, caches and screenshots: deleting them cannot change what the tests exercise.
+var artifactDir = map[string]bool{".playwright-mcp": true, "node_modules": true, "dist": true, "build": true,
+	"__pycache__": true, ".pytest_cache": true, ".mypy_cache": true, ".ruff_cache": true, "coverage": true,
+	".cache": true, ".next": true, "tmp": true, ".tmp": true}
+var artifactExt = regexp.MustCompile(`(?i)\.(png|jpe?g|gif|webp|log|tmp)$`)
+
+func isArtifactPath(p string) bool {
+	p = strings.Trim(strings.ReplaceAll(strings.TrimRight(p, ","), "\\", "/"), "/")
+	if p == "" || p == "." || p == "*" {
+		return false
+	}
+	if proseExt.MatchString(p) || artifactExt.MatchString(p) {
+		return true
+	}
+	for _, seg := range strings.Split(p, "/") {
+		if artifactDir[strings.ToLower(seg)] {
+			return true
+		}
+	}
+	return false
+}
+
+// cleanupOnly is true when every changing part of the command deletes build artifacts, prose or
+// screenshots, and nothing else: `rm -rf .playwright-mcp`, `Remove-Item -Recurse node_modules`.
+func cleanupOnly(command string) bool {
+	deleted := false
+	for _, p := range commandParts(command) {
+		w := invocation(p)
+		if len(w) == 0 || !shellMutation.MatchString(strings.Join(p, " ")) {
+			continue
+		}
+		switch w[0] {
+		case "rm", "del", "rmdir", "rd", "remove-item":
+		default:
+			return false
+		}
+		targets := 0
+		for _, a := range w[1:] {
+			if strings.HasPrefix(a, "-") || a == "," {
+				continue
+			}
+			if !isArtifactPath(a) {
+				return false
+			}
+			targets++
+		}
+		if targets == 0 {
+			return false
+		}
+		deleted = true
+	}
+	return deleted
+}

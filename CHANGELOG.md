@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- A shell command that changes a file and then tests it (`sed -i … && pytest`, `printf … > notes.txt && python -m unittest`) now counts as tested after the change. 0.4.3 recorded the change after the whole command, so the test run inside it never counted. A test followed by a change in the same command (`pytest && sed -i …`) is still flagged.
+- Deleting only build artifacts, caches, screenshots or prose files (`rm -rf .playwright-mcp`, `Remove-Item -Recurse node_modules, dist`) is no longer a file change. Deleting anything else, including a source file, still is.
+- A prose file written after a green run (README, notes, changelog, an agent's memory file) no longer invalidates the run: "the last file change" now ignores `.md`, `.txt`, `.rst` and similar files. A code change after the note still does.
+- 15 new synthetic cases (`detector/ordering_test.go`), each false alarm paired with the true alarm that must stay. Origin: a field report of 13 Stop-hook blocks in one long session, 2026-11-09.
+
 ## 0.4.3 — 2026-11-08
 
 - A markdown blockquote (lines starting with `>`) is now a mention, like a quote: an agent reproducing an old answer to audit it is no longer blocked for the claim it quotes. A blockquote still counts when the answer is little more than the blockquote itself.

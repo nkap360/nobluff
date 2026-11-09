@@ -115,6 +115,9 @@ func managedTurns(events []maEvent) []*Session {
 			_ = json.Unmarshal(e.Input, &in)
 			switch {
 			case maShell[e.Name]:
+				if shellEditOrder(in.Command) == "before" { // the command changed files before checking them
+					cur.Steps = append(cur.Steps, Step{Kind: "edit", Tool: e.Name})
+				}
 				cur.Steps = append(cur.Steps, Step{Kind: "command", Tool: e.Name, Command: in.Command, ID: e.ID})
 			case maEdit[e.Name]:
 				p := in.FilePath
@@ -127,7 +130,7 @@ func managedTurns(events []maEvent) []*Session {
 			}
 			index[e.ID] = len(cur.Steps) - 1
 			pending = append(pending, len(cur.Steps)-1)
-			if maShell[e.Name] && shellMayEdit(in.Command) {
+			if maShell[e.Name] && shellEditOrder(in.Command) == "after" {
 				cur.Steps = append(cur.Steps, Step{Kind: "edit", Tool: e.Name})
 			}
 		case "agent.tool_result":
